@@ -75,29 +75,32 @@ function CartPage() {
   // Calculate local coupon discount
   let discountAmount = 0;
   let discountLabel = null;
-  if (coupon.trim()) {
-    const today = new Date().toISOString().slice(0, 10);
-    const hour = new Date().getHours();
-    const eligible = discounts.filter((d) => {
-      if (!d.is_active) return false;
-      if (d.starts_at && d.starts_at > today) return false;
-      if (d.ends_at && d.ends_at < today) return false;
-      if (subtotal < Number(d.min_order_amount)) return false;
-      if (d.start_hour != null && d.end_hour != null && (hour < d.start_hour || hour >= d.end_hour)) return false;
-      if (d.coupon_code) return coupon.trim().toUpperCase() === d.coupon_code.toUpperCase();
-      return false;
-    });
-
-    for (const d of eligible) {
-      const raw = d.type === "flat" ? Number(d.value) : (subtotal * Number(d.value)) / 100;
-      const capped = d.max_discount != null ? Math.min(raw, Number(d.max_discount)) : raw;
-      if (capped > discountAmount) {
-        discountAmount = capped;
-        discountLabel = d.name;
-      }
+  
+  const today = new Date().toISOString().slice(0, 10);
+  const hour = new Date().getHours();
+  // Always evaluate discounts to support auto-applied discounts without a code
+  const eligible = discounts.filter((d) => {
+    if (!d.is_active) return false;
+    if (d.starts_at && d.starts_at.slice(0, 10) > today) return false;
+    if (d.ends_at && d.ends_at.slice(0, 10) < today) return false;
+    if (subtotal < Number(d.min_order_amount)) return false;
+    if (d.start_hour != null && d.end_hour != null && (hour < d.start_hour || hour >= d.end_hour)) return false;
+    if (d.coupon_code) {
+      if (!coupon.trim()) return false;
+      return coupon.trim().toUpperCase() === d.coupon_code.toUpperCase();
     }
-    discountAmount = Math.max(0, Math.round(Math.min(discountAmount, subtotal) * 100) / 100);
+    return true;
+  });
+
+  for (const d of eligible) {
+    const raw = d.type === "flat" ? Number(d.value) : (subtotal * Number(d.value)) / 100;
+    const capped = d.max_discount != null ? Math.min(raw, Number(d.max_discount)) : raw;
+    if (capped > discountAmount) {
+      discountAmount = capped;
+      discountLabel = d.name;
+    }
   }
+  discountAmount = Math.max(0, Math.round(Math.min(discountAmount, subtotal) * 100) / 100);
 
   const taxable = Math.max(0, subtotal - discountAmount);
   const packing = takeaway ? Number(settings?.packing_charge ?? 0) : 0;

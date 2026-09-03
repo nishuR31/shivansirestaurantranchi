@@ -128,9 +128,6 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
     const subtotal = items.reduce((s: number, i: any) => s + i.line_total, 0);
 
     const sessionToken = req.cookies?.profile_token ?? req.headers["session-token"] ?? "no-session";
-    const cartHashPayload = JSON.stringify({ items: data.lines, subtotal });
-    const requestHash = crypto.createHash('sha256').update(cartHashPayload + sessionToken).digest('hex');
-
     const today = new Date().toISOString().slice(0, 10);
     const hour = new Date().getHours();
 
@@ -141,10 +138,7 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
       // 2b. Check Idempotency inside transaction
       const existingOrder = await tx.order.findFirst({
         where: {
-          OR: [
-            { idempotency_key: idempotencyKey },
-            { request_hash: requestHash },
-          ],
+          idempotency_key: idempotencyKey,
         },
       });
       if (existingOrder) return { newOrder: existingOrder, total: Number(existingOrder.total) };
@@ -158,8 +152,8 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
 
       // 4. Coupon/Campaign discounts
       const eligible = discounts.filter((d) => {
-        if (d.starts_at && d.starts_at > new Date(today)) return false;
-        if (d.ends_at && d.ends_at < new Date(today)) return false;
+        if (d.starts_at && d.starts_at.toISOString().slice(0, 10) > today) return false;
+        if (d.ends_at && d.ends_at.toISOString().slice(0, 10) < today) return false;
         if (subtotal < Number(d.min_order_amount)) return false;
         if (
           d.start_hour != null &&
@@ -263,7 +257,6 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
           status: "PENDING",
           payment_status: "pending",
           idempotency_key: idempotencyKey,
-          request_hash: requestHash,
           session_token: crypto.randomUUID
             ? crypto.randomUUID()
             : crypto.randomBytes(16).toString("hex"),
@@ -342,9 +335,6 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
     });
   } catch (error: any) {
     logger.error(`Error in placeOrder: ${error.message}`);
-    if (error.code === 'P2002' && error.meta?.target?.includes('request_hash')) {
-      return res.status(409).send({ error: "Order already placed recently. Please check your orders." });
-    }
     return res.status(400).send({ error: error.message });
   }
 };
