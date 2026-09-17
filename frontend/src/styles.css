@@ -50,8 +50,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-veg: var(--veg);
-  --color-nonveg: var(--nonveg);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -126,9 +125,6 @@
   --warning: oklch(0.82 0.16 85);
   --warning-foreground: oklch(0.18 0.02 85);
 
-  /* Food badges */
-  --veg: oklch(0.72 0.17 150);
-  --nonveg: oklch(0.63 0.2 30);
 
   /* Strokes */
   --border: oklch(0.99 0.002 285 / 10%);
@@ -547,51 +543,51 @@
    ════════════════════════════════════════════════════ */
 
 .style-minimalist {
-  --radius: 1rem;
+  --radius: 0.75rem;
   --ui-glass-bg: var(--card);
   --ui-glass-backdrop: none;
-  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
   
   --ui-glass-strong-bg: var(--card);
   --ui-glass-strong-backdrop: none;
   --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
 
-  --shadow-card: 0 4px 12px -2px color-mix(in oklab, var(--foreground) 3%, transparent);
-  --shadow-card-hover: 0 10px 24px -4px color-mix(in oklab, var(--foreground) 8%, transparent);
+  --shadow-card: 0 4px 16px -4px color-mix(in oklab, var(--foreground) 4%, transparent), 0 1px 3px -1px color-mix(in oklab, var(--foreground) 2%, transparent);
+  --shadow-card-hover: 0 12px 32px -8px color-mix(in oklab, var(--foreground) 6%, transparent), 0 2px 8px -2px color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
 .style-liquid-glass {
-  --radius: 1.25rem;
-  --ui-glass-bg: color-mix(in oklab, var(--card) 65%, transparent);
-  --ui-glass-backdrop: blur(48px) saturate(220%);
-  --ui-glass-border: 1px solid color-mix(in oklab, white 25%, transparent);
+  --radius: 1.5rem;
+  --ui-glass-bg: linear-gradient(135deg, color-mix(in oklab, var(--card) 60%, transparent), color-mix(in oklab, var(--card) 40%, transparent));
+  --ui-glass-backdrop: blur(32px) saturate(180%);
+  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
   
-  --ui-glass-strong-bg: color-mix(in oklab, var(--card) 75%, transparent);
-  --ui-glass-strong-backdrop: blur(64px) saturate(240%);
-  --ui-glass-strong-border: 1px solid color-mix(in oklab, white 35%, transparent);
+  --ui-glass-strong-bg: linear-gradient(135deg, color-mix(in oklab, var(--card) 80%, transparent), color-mix(in oklab, var(--card) 60%, transparent));
+  --ui-glass-strong-backdrop: blur(48px) saturate(200%);
+  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
 
-  --shadow-card: 0 16px 32px -8px color-mix(in oklab, black 30%, transparent);
-  --shadow-card-hover: 0 24px 48px -12px color-mix(in oklab, black 40%, transparent);
+  --shadow-card: 0 12px 32px -8px color-mix(in oklab, var(--background) 50%, transparent);
+  --shadow-card-hover: 0 24px 48px -12px color-mix(in oklab, var(--primary) 30%, transparent), inset 0 1px 0 0 color-mix(in oklab, white 10%, transparent);
 }
 
 .style-claymorphism {
-  --radius: 1.75rem;
+  --radius: 2rem;
   --ui-glass-bg: var(--card);
   --ui-glass-backdrop: none;
-  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
+  --ui-glass-border: 1px solid transparent;
 
   --ui-glass-strong-bg: var(--card);
   --ui-glass-strong-backdrop: none;
-  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  --ui-glass-strong-border: 1px solid transparent;
 
   --shadow-card:
-    inset -4px -4px 12px color-mix(in oklab, var(--background) 40%, transparent),
-    inset 4px 4px 12px color-mix(in oklab, white 15%, transparent),
-    10px 10px 20px -5px color-mix(in oklab, black 35%, transparent);
+    inset -8px -8px 16px color-mix(in oklab, var(--background) 30%, transparent),
+    inset 8px 8px 16px color-mix(in oklab, white 6%, transparent),
+    12px 12px 24px -6px color-mix(in oklab, black 25%, transparent);
   --shadow-card-hover:
-    inset -6px -6px 16px color-mix(in oklab, var(--background) 50%, transparent),
-    inset 6px 6px 16px color-mix(in oklab, white 20%, transparent),
-    16px 16px 32px -8px color-mix(in oklab, black 45%, transparent);
+    inset -8px -8px 16px color-mix(in oklab, var(--background) 40%, transparent),
+    inset 8px 8px 16px color-mix(in oklab, white 10%, transparent),
+    20px 20px 40px -10px color-mix(in oklab, black 35%, transparent);
 }
 
 /* ════════════════════════════════════════════════════

@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/product-card";
 import { categoriesQuery, productsQuery, settingsQuery } from "@/lib/db";
 
-type DietFilter = "all" | "veg" | "nonveg";
 
 interface MenuExplorerProps {
   initialCategory?: string;
@@ -28,7 +27,6 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(initialCategory ?? "all");
-  const [diet, setDiet] = useState<DietFilter>("all");
 
   const currency = settings?.currency ?? "₹";
 
@@ -45,13 +43,11 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
     return list.filter((p) => {
       const cat = categories.find((c) => c.id === p.category_id);
       if (category !== "all" && cat?.slug !== category) return false;
-      if (diet === "veg" && !p.is_veg) return false;
-      if (diet === "nonveg" && p.is_veg) return false;
       if (term && !`${p.name} ${p.description}`.toLowerCase().includes(term))
         return false;
       return true;
     });
-  }, [products, categories, category, diet, search]);
+  }, [products, categories, category, search]);
 
   return (
     <div className="space-y-6">
@@ -65,22 +61,6 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
             className="h-11 rounded-full pl-9"
             maxLength={60}
           />
-        </div>
-        <div className="flex gap-1.5">
-          {(["all", "veg", "nonveg"] as DietFilter[]).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDiet(d)}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
-                diet === d
-                  ? "border-primary bg-primary/20 text-foreground"
-                  : "border-border text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {d === "all" ? "All" : d === "veg" ? "Veg" : "Non-veg"}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -144,11 +124,6 @@ export function MenuExplorerSkeleton() {
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <Skeleton className="h-11 rounded-full shimmer" />
-        <div className="flex gap-1.5">
-          <Skeleton className="h-9 w-16 rounded-full shimmer" />
-          <Skeleton className="h-9 w-16 rounded-full shimmer" />
-          <Skeleton className="h-9 w-16 rounded-full shimmer" />
-        </div>
       </div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0">
         {Array.from({ length: 5 }).map((_, i) => (

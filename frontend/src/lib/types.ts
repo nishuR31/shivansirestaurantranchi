@@ -20,7 +20,6 @@ export interface Product {
   review_count: number;
   prep_time_mins: number;
   is_available: boolean;
-  is_veg: boolean;
   is_spicy: boolean;
   calories: number;
   is_special: boolean;

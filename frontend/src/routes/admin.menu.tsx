@@ -35,7 +35,6 @@ const emptyProduct = {
   prep_time_mins: 15,
   calories: 0,
   is_available: true,
-  is_veg: true,
   is_spicy: false,
   is_special: false,
   is_popular: false,
@@ -348,12 +347,6 @@ function MenuManager() {
                     description="Hide this item from customers"
                     checked={Boolean(product?.["is_available"])}
                     onChange={(v) => setProduct({ ...product, is_available: v })}
-                  />
-                  <Toggle
-                    label="Vegetarian"
-                    description="Green/red dot indicator"
-                    checked={Boolean(product?.["is_veg"])}
-                    onChange={(v) => setProduct({ ...product, is_veg: v })}
                   />
                   <Toggle
                     label="Spicy"

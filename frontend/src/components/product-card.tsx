@@ -65,8 +65,10 @@ export function ProductCard({
 
   return (
     <article
-      className="group card-3d hover:card-3d-hover glass flex flex-col overflow-hidden rounded-3xl animate-fade-up"
+      className="group card-3d hover:card-3d-hover glass flex flex-col overflow-hidden rounded-3xl animate-fade-up focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       style={{ position: "relative" }}
+      tabIndex={0}
+      aria-label={`Product: ${product.name}`}
     >
       {/* Card top shine — glassmorphism layer */}
       <div
@@ -94,13 +96,6 @@ export function ProductCard({
 
         {/* Badges — veg/spicy/special */}
         <div className="touch-compact absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <Badge
-            variant={product.is_veg ? "veg" : "nonveg"}
-            className="glass animate-scale-in"
-          >
-            <Leaf className="mr-1 size-3" aria-hidden="true" />
-            {product.is_veg ? "Veg" : "Non-veg"}
-          </Badge>
           {product.is_spicy ? (
             <Badge
               variant="warning"

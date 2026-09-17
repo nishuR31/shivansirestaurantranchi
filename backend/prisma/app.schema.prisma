@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prismaApp"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prismaApp"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -48,7 +48,7 @@ model User {
   birthday       DateTime?
   visits         Int       @default(0)
   reward_points  Int       @default(0)
-  total_spend    Decimal     @default(0)
+  total_spend    Decimal   @default(0)
   favourite_item String?
   saved_address  String?
   last_visit     DateTime?
@@ -57,8 +57,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   orders Order[]
-
-
 
   @@index([email])
   @@index([role])
@@ -80,27 +78,26 @@ model Category {
 }
 
 model Product {
-  id              String  @id @default(uuid())
-  category_id     String?
-  category        Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
-  name            String
-  description     String?
-  image_url       String?
-  price           Decimal
-  offer_price     Decimal?
-  rating          Decimal   @default(0)
-  review_count    Int     @default(0)
-  prep_time_mins  Int     @default(15)
-  is_available    Boolean @default(true)
-  is_veg          Boolean @default(true)
-  is_spicy        Boolean @default(false)
-  calories        Int     @default(0)
-  is_special      Boolean @default(false)
-  is_popular      Boolean @default(false)
-  is_recommended  Boolean @default(false)
-  sold_by_weight  Boolean @default(false)
-  price_per_kg    Decimal?
-  sort_order      Int     @default(0)
+  id             String    @id @default(uuid())
+  category_id    String?
+  category       Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  name           String
+  description    String?
+  image_url      String?
+  price          Decimal
+  offer_price    Decimal?
+  rating         Decimal   @default(0)
+  review_count   Int       @default(0)
+  prep_time_mins Int       @default(15)
+  is_available   Boolean   @default(true)
+  is_spicy       Boolean   @default(false)
+  calories       Int       @default(0)
+  is_special     Boolean   @default(false)
+  is_popular     Boolean   @default(false)
+  is_recommended Boolean   @default(false)
+  sold_by_weight Boolean   @default(false)
+  price_per_kg   Decimal?
+  sort_order     Int       @default(0)
 
   orderItems OrderItem[]
 
@@ -177,18 +174,16 @@ model RestaurantTable {
   @@map("restaurant_tables")
 }
 
-
-
 model Order {
-  id              String  @id @default(uuid())
-  order_number    String  @unique
-  bill_id         String? @unique
-  idempotency_key String? @unique
-  request_hash    String? @unique
+  id              String      @id @default(uuid())
+  order_number    String      @unique
+  bill_id         String?     @unique
+  idempotency_key String?     @unique
+  request_hash    String?     @unique
   session_token   String
   table_number    Int?
   user_id         String?
-  user            User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user            User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   customer_name   String?
   customer_phone  String?
   status          OrderStatus @default(PENDING)
@@ -202,7 +197,7 @@ model Order {
   delivery_charge Decimal
   total           Decimal
   notes           String?
-  created_at      DateTime @default(now())
+  created_at      DateTime    @default(now())
 
   order_items OrderItem[]
 
@@ -214,9 +209,9 @@ model Order {
 }
 
 model OrderItem {
-  id           String  @id @default(uuid())
+  id           String   @id @default(uuid())
   order_id     String
-  order        Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order        Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product_id   String?
   product      Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
   name         String
@@ -247,9 +242,9 @@ model Rating {
   id         String   @id @default(cuid())
   orderId    String
   menuItemId String
-  userId     String?  // nullable for guest orders
-  phone      String   // used to associate guest ratings
-  stars      Int      // 1–5
+  userId     String? // nullable for guest orders
+  phone      String // used to associate guest ratings
+  stars      Int // 1–5
   comment    String?
   createdAt  DateTime @default(now())
 
@@ -283,18 +278,17 @@ model PhoneVerification {
   @@map("phone_verifications")
 }
 
-
 model Passkey {
   id                  String   @id @default(uuid())
   credentialID        Bytes
   credentialPublicKey Bytes
   counter             BigInt
   transports          String[]
-  
-  userId              String
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt           DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([credentialID])

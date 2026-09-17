@@ -206,7 +206,6 @@ model Product {
   review_count    Int     @default(0)
   prep_time_mins  Int     @default(15)
   is_available    Boolean @default(true)
-  is_veg          Boolean @default(true)
   is_spicy        Boolean @default(false)
   calories        Int     @default(0)
   is_special      Boolean @default(false)
