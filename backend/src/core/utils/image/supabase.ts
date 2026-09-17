@@ -1,6 +1,6 @@
-import {
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_ANON_KEY,
   SUPABASE_STORAGE_BUCKET,
 } from "../../config/envConfig";
 
@@ -17,7 +17,7 @@ export default async function uploadToSupabase(
   filename: string,
 ): Promise<SupabaseUploadResult> {
   const supabaseUrl = SUPABASE_URL;
-  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
   const bucket = SUPABASE_STORAGE_BUCKET;
 
   if (!supabaseUrl) {
@@ -25,7 +25,7 @@ export default async function uploadToSupabase(
   }
 
   if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables");
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY is not set in environment variables");
   }
 
   if (!bucket) {
@@ -68,7 +68,7 @@ export default async function uploadToSupabase(
 
 export async function deleteFromSupabase(publicUrl: string): Promise<void> {
   const supabaseUrl = SUPABASE_URL;
-  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
   const bucket = SUPABASE_STORAGE_BUCKET;
 
   if (!supabaseUrl || !serviceRoleKey || !bucket) {

@@ -100,6 +100,11 @@ function SettingsPage() {
                   label: "Claymorphism",
                   desc: "Soft 3D, chunky, playful borders",
                 },
+                {
+                  id: "pro-max",
+                  label: "Pro Max",
+                  desc: "Premium iOS-like gradients & shadows",
+                },
               ].map((b) => (
                 <button
                   key={b.id}

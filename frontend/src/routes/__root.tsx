@@ -272,12 +272,13 @@ function ThemeSync() {
 
     // Remove previous bases
     root.classList.remove(
-      "base-default",
-      "base-minimalist",
-      "base-liquid-glass",
-      "base-claymorphism",
+      "style-default",
+      "style-minimalist",
+      "style-liquid-glass",
+      "style-claymorphism",
+      "style-pro-max"
     );
-    root.classList.add(`base-${base}`);
+    root.classList.add(`style-${base}`);
   }, [mode, base]);
   return null;
 }
