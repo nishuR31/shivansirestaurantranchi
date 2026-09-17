@@ -2,7 +2,7 @@ import env from "./envConfig";
 import logger from "./loggerConfig";
 import { sendViaBrevo, brevoConfigured } from "../providers/brevoProvider";
 import { sendViaSmtp, smtpConfigured } from "../providers/nodemailerProvider";
-// import { sendViaGmail, gmailConfigured } from "../providers/gmailProvider";
+import { sendViaGmailApi as sendViaGmail, gmailApiConfigured as gmailConfigured } from "../providers/gmailProvider";
 
 export const EMAIL_FROM = env.SMTP_FROM;
 
@@ -20,11 +20,11 @@ export async function sendMailProvider(
     return;
   }
 
-  // if (transport === "gmail" && gmailConfigured) {
-  //   logger.debug(`Sending email to ${to} via Gmail API`);
-  //   await sendViaGmail(to, subject, html);
-  //   return;
-  // }
+  if (transport === "gmail" && gmailConfigured) {
+    logger.debug(`Sending email to ${to} via Gmail API`);
+    await sendViaGmail(to, subject, html);
+    return;
+  }
 
   if (transport === "smtp" && smtpConfigured) {
     logger.debug(`Sending email to ${to} via SMTP`);
@@ -36,9 +36,9 @@ export async function sendMailProvider(
   if (brevoConfigured) {
     logger.debug(`Sending email to ${to} via Brevo (fallback)`);
     await sendViaBrevo(to, subject, html, text);
-    // } else if (gmailConfigured) {
-    //   logger.debug(`Sending email to ${to} via Gmail API (fallback)`);
-    //   await sendViaGmail(to, subject, html);
+  } else if (gmailConfigured) {
+    logger.debug(`Sending email to ${to} via Gmail API (fallback)`);
+    await sendViaGmail(to, subject, html);
   } else if (smtpConfigured) {
     logger.debug(`Sending email to ${to} via SMTP (fallback)`);
     await sendViaSmtp(to, subject, html);

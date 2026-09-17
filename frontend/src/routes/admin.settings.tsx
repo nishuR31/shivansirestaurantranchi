@@ -13,6 +13,7 @@ import {
 } from "@/lib/config.functions";
 import { proposeGovernanceAction } from "@/lib/governance.functions";
 import { useIsAdmin } from "@/lib/auth";
+import { PageLoader } from "@/components/page-loader";
 
 export const Route = createFileRoute("/admin/settings")({
   component: SettingsManager,
@@ -41,6 +42,7 @@ function SettingsManager() {
     queryFn: ({ signal }) => getOwnerSettings({ signal }),
   });
   const [form, setForm] = useState<Record<string, unknown>>({});
+  const isLoadingSettings = settings === undefined && !form["id"]; // naive check
 
   const save = useMutation({
     mutationFn: async () => {
@@ -51,26 +53,26 @@ function SettingsManager() {
         ]),
       ) as any;
       if (form["id"]) data.id = form["id"];
-      
+
       const newSuspended = Boolean(form["is_suspended"]);
-      
+
       if (isSuperAdmin && settings && Boolean(settings.is_suspended) !== newSuspended) {
-         // Submit as governance request instead of saving directly
-         await proposeGovernanceAction({
-            action_type: "SUSPEND_APP",
-            payload: {
-               message: form["shutdown_message"] ? String(form["shutdown_message"]) : null,
-               code: form["shutdown_code"] ? Number(form["shutdown_code"]) : null,
-               is_suspended: newSuspended
-            }
-         });
-         toast.success("Governance proposal submitted for suspension change.");
+        // Submit as governance request instead of saving directly
+        await proposeGovernanceAction({
+          action_type: "SUSPEND_APP",
+          payload: {
+            message: form["shutdown_message"] ? String(form["shutdown_message"]) : null,
+            code: form["shutdown_code"] ? Number(form["shutdown_code"]) : null,
+            is_suspended: newSuspended
+          }
+        });
+        toast.success("Governance proposal submitted for suspension change.");
       } else {
-         data.is_suspended = newSuspended;
-         data.shutdown_code = form["shutdown_code"] ? Number(form["shutdown_code"]) : null;
-         data.shutdown_message = form["shutdown_message"] ? String(form["shutdown_message"]) : null;
+        data.is_suspended = newSuspended;
+        data.shutdown_code = form["shutdown_code"] ? Number(form["shutdown_code"]) : null;
+        data.shutdown_message = form["shutdown_message"] ? String(form["shutdown_message"]) : null;
       }
-      
+
       return saveOwnerSettings(data);
     },
     onSuccess: () => {
@@ -91,6 +93,7 @@ function SettingsManager() {
     whatsappPhoneNumberId: "",
     whatsappToken: "",
   });
+  const isLoadingConfig = config === undefined && !cfg.ownerEmail;
 
   const saveConfig = useMutation({
     mutationFn: () => saveAppConfig(cfg),
@@ -118,6 +121,10 @@ function SettingsManager() {
 
   if (!isSuperAdmin) {
     return <Navigate to="/admin" replace />;
+  }
+
+  if (isLoadingSettings || isLoadingConfig) {
+    return <PageLoader />;
   }
 
   return (

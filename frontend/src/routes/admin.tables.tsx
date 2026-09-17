@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { tablesQuery } from "@/lib/db";
 import { useDeleteRow, useSaveRow } from "@/lib/admin";
 import type { RestaurantTable } from "@/lib/types";
+import { PageLoader } from "@/components/page-loader";
 
 export const Route = createFileRoute("/admin/tables")({
   component: TablesManager,
@@ -103,10 +104,12 @@ function TableCard({
 }
 
 function TablesManager() {
-  const { data: tables = [] } = useQuery(tablesQuery);
+  const { data: tables = [], isLoading } = useQuery(tablesQuery);
   const save = useSaveRow("restaurant_tables", "tables", "Table saved");
   const remove = useDeleteRow("restaurant_tables", "tables");
   const [draft, setDraft] = useState({ table_number: tables.length + 1, seats: 4 });
+
+  if (isLoading) return <PageLoader />;
 
   return (
     <div className="space-y-6">

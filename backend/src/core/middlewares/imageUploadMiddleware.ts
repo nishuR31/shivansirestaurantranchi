@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import sharp from "sharp";
+import optimizeImage from "../utils/helpers/imageUpload";
 import uploadToService from "../utils/image";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -92,13 +92,7 @@ export function createImageUploadMiddleware(opts: ImageUploadMiddlewareOptions =
           }
 
           // ── 3. Optimise with sharp → WebP ─────────────────────────────
-          const optimised = await sharp(rawBuffer)
-            .resize(maxWidth, maxHeight, {
-              fit: "inside", // preserve aspect ratio
-              withoutEnlargement: true, // never upscale small images
-            })
-            .webp({ quality })
-            .toBuffer();
+          const { buffer: optimised } = await optimizeImage(rawBuffer, maxWidth, maxHeight, quality);
 
           // Build a clean filename for imgbb
           const baseName = (part.filename ?? "image")

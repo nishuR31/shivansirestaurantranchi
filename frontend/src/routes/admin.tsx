@@ -74,17 +74,10 @@ function AdminLayout() {
   }, [checking, user, isAdmin, mfaSatisfied, navigate]);
 
   useEffect(() => {
-    if (!isAdmin || !mfaSatisfied) return;
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       void Notification.requestPermission();
     }
-    // Poll every 30 s — no Supabase realtime needed
-    const interval = setInterval(() => {
-      void qc.invalidateQueries({ queryKey: ["orders"] });
-      void qc.invalidateQueries({ queryKey: ["notifications"] });
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [isAdmin, mfaSatisfied, qc]);
+  }, [isAdmin, mfaSatisfied]);
 
   async function handleSignOut() {
     await qc.cancelQueries();

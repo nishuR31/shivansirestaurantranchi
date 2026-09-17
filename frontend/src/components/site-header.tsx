@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart";
 import { settingsQuery } from "@/lib/db";
 import { useIsAdmin } from "@/lib/auth";
-import { getCustomerSession } from "@/routes/login";
+import { getCustomerSession } from "@/lib/auth";
 
 const NAV_LINKS = [
   {

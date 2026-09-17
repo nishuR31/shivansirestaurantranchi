@@ -2,6 +2,12 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { cache } from "../../core/config/redisConfig";
+import { 
+  emitProductUpdated, 
+  emitAvailabilityChanged, 
+  emitSettingsUpdated, 
+  emitTableStatusChanged 
+} from "../../core/providers/socketEmitter";
 
 // Map frontend table names to Prisma model names
 const modelMap: Record<string, any> = {
@@ -90,6 +96,18 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
         data,
       });
       if (cacheKeyMap[table]) await cache.del(cacheKeyMap[table]);
+
+      if (table === "products") {
+        emitProductUpdated(updated);
+        if (data.is_available !== undefined) {
+          emitAvailabilityChanged(updated.id, updated.is_available);
+        }
+      } else if (table === "restaurant_settings") {
+        emitSettingsUpdated(updated);
+      } else if (table === "restaurant_tables") {
+        emitTableStatusChanged(updated);
+      }
+
       return res.send(updated);
     } else {
       // Insert
@@ -97,6 +115,15 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
         data,
       });
       if (cacheKeyMap[table]) await cache.del(cacheKeyMap[table]);
+
+      if (table === "products") {
+        emitProductUpdated(inserted);
+      } else if (table === "restaurant_settings") {
+        emitSettingsUpdated(inserted);
+      } else if (table === "restaurant_tables") {
+        emitTableStatusChanged(inserted);
+      }
+
       return res.send(inserted);
     }
   } catch (error: any) {
@@ -122,6 +149,14 @@ export const deleteRow = async (req: FastifyRequest, res: FastifyReply) => {
     });
 
     if (cacheKeyMap[table]) await cache.del(cacheKeyMap[table]);
+
+    if (table === "products") {
+      emitProductUpdated({ id });
+    } else if (table === "restaurant_settings") {
+      emitSettingsUpdated({ id });
+    } else if (table === "restaurant_tables") {
+      emitTableStatusChanged({ id });
+    }
 
     return res.send({ ok: true });
   } catch (error: any) {

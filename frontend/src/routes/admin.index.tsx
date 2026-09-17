@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Invoice } from "@/components/invoice";
+import { PageLoader } from "@/components/page-loader";
 import { notificationsQuery, ordersQuery, settingsQuery } from "@/lib/db";
 import { formatTime, isToday, money } from "@/lib/format";
 import { STATUS_LABEL, type Order, type OrderStatus } from "@/lib/types";
@@ -31,25 +32,6 @@ const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function isSameDay(date: Date, other: Date) {
-  return (
-    date.getDate() === other.getDate() &&
-    date.getMonth() === other.getMonth() &&
-    date.getFullYear() === other.getFullYear()
-  );
-}
-
-function isThisMonth(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-}
-
-function isThisYear(iso: string) {
-  const d = new Date(iso);
-  return d.getFullYear() === new Date().getFullYear();
-}
-
 function revenueOf(orders: Order[]) {
   return orders
     .filter((o) => o.status !== "CANCELLED")
@@ -57,14 +39,12 @@ function revenueOf(orders: Order[]) {
 }
 
 function LiveOrders() {
-  const { data: orders = [] } = useQuery(ordersQuery);
-  const { data: settings } = useQuery(settingsQuery);
-  const { data: notifications = [] } = useQuery(notificationsQuery);
+  const { data: orders = [], isLoading: loadingOrders } = useQuery(ordersQuery);
+  const { data: settings, isLoading: loadingSettings } = useQuery(settingsQuery);
+  const { data: notifications = [], isLoading: loadingNotifs } = useQuery(notificationsQuery);
   const qc = useQueryClient();
   const [openBill, setOpenBill] = useState<string | null>(null);
   const [filter, setFilter] = useState<"live" | "today" | "unread">("live");
-  const [customDate, setCustomDate] = useState("");
-  const [showAnalytics, setShowAnalytics] = useState(true);
   const changeStatus = updateOrderStatus;
 
   const currency = settings?.currency ?? "₹";
@@ -77,6 +57,10 @@ function LiveOrders() {
 
   const displayedOrders =
     filter === "today" ? todays : filter === "unread" ? unread : live;
+
+  if (loadingOrders || loadingSettings || loadingNotifs) {
+    return <PageLoader />;
+  }
 
   async function setStatus(order: Order, status: OrderStatus) {
     try {
@@ -293,11 +277,10 @@ function Kpi({
   return (
     <button
       onClick={onClick}
-      className={`glass card-3d hover:card-3d-hover rounded-3xl p-5 text-left w-full transition-colors ${
-        active
+      className={`glass card-3d hover:card-3d-hover rounded-3xl p-5 text-left w-full transition-colors ${active
           ? "border-primary/50 bg-primary/10 shadow-[0_0_20px_rgba(var(--primary-rgb,124,58,237),0.15)]"
           : ""
-      }`}
+        }`}
     >
       <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
         <Icon className="size-4 text-accent" /> {label}

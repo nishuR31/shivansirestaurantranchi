@@ -2,7 +2,7 @@ import {
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_STORAGE_BUCKET,
-} from "../../config/envConfig.js";
+} from "../../config/envConfig";
 
 export interface SupabaseUploadResult {
   url: string;

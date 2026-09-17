@@ -7,11 +7,19 @@ import {
   connectRedisRateLimit,
   rateLimit,
 } from "./core/config/redisConfig";
+import {
+  initializeSocketIO,
+  closeSocketIO,
+} from "./core/config/socketConfig";
 
 const startServer = async () => {
   try {
     await Promise.all([connectRedisCache(), connectRedisRateLimit()]);
     const address = await app.listen({ port: API_PORT, host: "0.0.0.0" });
+
+    // Initialize Socket.IO after the HTTP server is ready
+    initializeSocketIO(app);
+    logger.info(`[Socket.IO] Real-time server attached to ${address}`);
   } catch (err: any) {
     logger.error(err?.message || err);
     process.exit(1);
@@ -21,6 +29,13 @@ const startServer = async () => {
 startServer();
 async function gracefulShutdown(signal: string) {
   logger.info(`\n Received ${signal}. Shutting down gracefully…`);
+
+  // Close Socket.IO first (gracefully disconnect all clients)
+  try {
+    await closeSocketIO();
+  } catch (err) {
+    logger.error({ error: err }, "Error closing Socket.IO");
+  }
 
   app.close(async () => {
     logger.info("HTTP server closed.");
@@ -58,3 +73,4 @@ process.on("uncaughtException", (error: Error) => {
   );
   process.exit(1);
 });
+

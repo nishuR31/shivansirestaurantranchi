@@ -92,6 +92,14 @@
     {
       "feature": "Redis Startup Fix",
       "action": "Added missing await to Promise.all for Redis connections in index.ts to prevent silent connection failures."
+    },
+    {
+      "feature": "Real-Time WebSockets Everywhere",
+      "action": "Added socket emitting (emitProductUpdated, emitSettingsUpdated, emitTableStatusChanged) to system.controller.ts for live global updates."
+    },
+    {
+      "feature": "Dynamic SEO Component",
+      "action": "Created SEO.tsx component and embedded it into __root.tsx layout for dynamic title and metadata management."
     }
   ],
   "active_bugs_and_tasks": [

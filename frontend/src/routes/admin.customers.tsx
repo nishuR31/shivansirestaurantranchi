@@ -8,14 +8,17 @@ import { Switch } from "@/components/ui/switch";
 import { customersQuery, reviewsQuery, fetchAPI } from "@/lib/db";
 import { useDeleteRow, useSaveRow } from "@/lib/admin";
 import { money } from "@/lib/format";
+import { PageLoader } from "@/components/page-loader";
 
 export const Route = createFileRoute("/admin/customers")({
   component: CustomersManager,
 });
 
 function CustomersManager() {
-  const { data: customers = [] } = useQuery(customersQuery);
-  const { data: reviews = [] } = useQuery(reviewsQuery);
+  const { data: customers = [], isLoading: loadingCust } = useQuery(customersQuery);
+  const { data: reviews = [], isLoading: loadingRev } = useQuery(reviewsQuery);
+
+  if (loadingCust || loadingRev) return <PageLoader />;
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;

@@ -20,14 +20,9 @@ import { Invoice } from "@/components/invoice";
 import { SiteFooter } from "@/components/site-footer";
 import { STATUS_LABEL, type Order } from "@/lib/types";
 import { formatDateTime, money } from "@/lib/format";
-import {
-  saveCustomerSession,
-  getCustomerSession,
-  clearCustomerSession,
-  LoginForm,
-} from "./login";
-import { fetchAPI, POLL_INTERVAL } from "@/lib/db";
-import { useIsAdmin } from "@/lib/auth";
+import { LoginForm } from "./login";
+import { fetchAPI } from "@/lib/db";
+import { getCustomerSession, clearCustomerSession, saveCustomerSession, useIsAdmin } from "@/lib/auth";
 
 export const Route = createFileRoute("/my-orders")({
   head: () => ({
@@ -72,7 +67,7 @@ function MyOrders() {
     },
     enabled: !!effectiveIdentifier && !checking,
     retry: false,
-    refetchInterval: POLL_INTERVAL,
+    // refetchInterval: POLL_INTERVAL,
   });
 
   function handleLoginSuccess({

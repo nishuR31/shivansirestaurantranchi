@@ -1,5 +1,11 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { broadcastOrderEvent } from "./order.stream";
+import {
+  emitOrderCreated,
+  emitOrderUpdated,
+  emitOrderStatusChanged,
+  emitOrderPaymentUpdated,
+  emitNotification,
+} from "../../core/providers/socketEmitter";
 import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import crypto from "crypto";
@@ -357,7 +363,12 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
       return { newOrder, total };
     });
 
-    broadcastOrderEvent("order_created", order);
+    emitOrderCreated(order);
+    emitNotification({
+      type: "order",
+      title: `New order ${order.order_number}`,
+      body: `${data.customerName} • ₹${total}`,
+    });
 
     const serveAt = data.tableNumber
       ? `Serve at table ${data.tableNumber}`
@@ -481,7 +492,7 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
       );
     }
 
-    broadcastOrderEvent("order_updated", order);
+    emitOrderStatusChanged(order, current.status);
     return res.send({ ok: true, order });
   } catch (error: any) {
     logger.error(`Error in updateOrderStatus: ${error.message}`);
@@ -496,7 +507,7 @@ export const updatePaymentStatus = async (req: FastifyRequest, res: FastifyReply
       where: { id },
       data: { payment_status: "paid" },
     });
-    broadcastOrderEvent("order_updated", order);
+    emitOrderPaymentUpdated(order);
     return res.send({ ok: true, order });
   } catch (error: any) {
     logger.error(`Error in updatePaymentStatus: ${error.message}`);
@@ -730,19 +741,20 @@ export const updateCustomerProfile = async (req: FastifyRequest, res: FastifyRep
     if (!token)
       return res.status(401).send({ error: "Profile token missing. Please verify phone again." });
 
+    const normalizedPhone = normalizePhone(phone);
     const payload = verifyProfileToken(token);
-    if (payload.phone !== phone)
+    if (payload.phone !== normalizedPhone)
       return res.status(401).send({ error: "Token does not match phone" });
 
     const customer = await prismaApp.user.findUnique({
-      where: { phone },
+      where: { phone: normalizedPhone },
       select: customerPublicSelect,
     });
     if (!customer)
       return res.status(404).send({ error: "No profile found for this number" });
 
     const updated = await prismaApp.user.update({
-      where: { phone },
+      where: { phone: normalizedPhone },
       data: {
         ...(name !== undefined && { name: String(name).trim().slice(0, 80) }),
         ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),

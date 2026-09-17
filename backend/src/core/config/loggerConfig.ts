@@ -24,7 +24,7 @@
 
 // const baseFormat = winston.format.combine(
 //   winston.format.timestamp({ format: "DD-MM-YYYY HH:mm:ss" }),
-//   winston.format.json(),
+//   winston.format.tson(),
 //   winston.format.errors({ stack: true }),
 //   customFormat,
 // );
@@ -69,7 +69,7 @@
 
 import pino from "pino";
 
-import { LOG_LEVEL, NODE_ENV } from "./envConfig.js";
+import { LOG_LEVEL, NODE_ENV } from "./envConfig";
 
 const isDev = NODE_ENV === "development";
 

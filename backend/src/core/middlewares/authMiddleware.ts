@@ -9,7 +9,6 @@ import asyncHandler from "../utils/common/asyncHandler";
 export const authenticate = asyncHandler(
   async (req: FastifyRequest, res: FastifyReply) => {
     // Accept token from Authorization: Bearer header OR httpOnly accessToken cookie
-    console.log("Cookies:", req.cookies, "Auth Header:", req.headers.authorization);
     const token = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.split(" ")[1]
       : req.cookies?.accessToken;

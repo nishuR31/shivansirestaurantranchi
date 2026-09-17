@@ -23,18 +23,18 @@ export interface OptimizedImageResult {
  *
  * @param buffer Raw image buffer
  */
-export async function optimizeImage(buffer: Buffer): Promise<OptimizedImageResult> {
+export async function optimizeImage(buffer: Buffer, width = 800, height = 800, quality = 80): Promise<OptimizedImageResult> {
   if (!buffer || buffer.length === 0) {
     throw new Error("Image buffer is empty");
   }
 
   const optimized = await sharp(buffer)
-    .resize({
-      width: 800,
+    .resize(width, height, {
+      fit: "inside",
       withoutEnlargement: true,
     })
     .webp({
-      quality: 80,
+      quality,
     })
     .toBuffer();
 

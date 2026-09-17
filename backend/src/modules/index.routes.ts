@@ -8,9 +8,9 @@ import reviewRoutes from "./reviews/review.routes";
 import settingsRoutes from "./settings/settings.routes";
 import systemRoutes from "./system/system.routes";
 import governanceRoutes from "./governance/governance.routes";
-import { healthRoutes } from "./system/health";
 import { pingRoutes } from "./system/ping";
 import { version } from "./system/version";
+import { healthRoutes } from "./system/health";
 
 export default async function moduleRoutes(app: FastifyInstance) {
   // Registering domain-based routes
@@ -27,8 +27,9 @@ export default async function moduleRoutes(app: FastifyInstance) {
   app.get("/customer-profile", orderController.getCustomerProfile);
   app.patch("/customer-profile", orderController.updateCustomerProfile);
 
-  // System status endpoints
-  app.register(healthRoutes);
+  // System status endpoints (healthRoutes registered in app.ts at root level)
   app.register(pingRoutes);
   app.register(version);
+  app.register(healthRoutes);
 }
+

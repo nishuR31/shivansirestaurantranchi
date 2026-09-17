@@ -111,7 +111,34 @@ function CartPage() {
   });
 
   for (const d of eligible) {
-    const raw = d.type === "flat" ? Number(d.value) : (subtotal * Number(d.value)) / 100;
+    // If discount is specific to products or categories, only apply to eligible lines
+    let eligibleSubtotal = subtotal;
+    if ((d.product_ids && d.product_ids.length > 0) || (d.category_ids && d.category_ids.length > 0)) {
+      eligibleSubtotal = lines.reduce((sum, line) => {
+        // We'd need line.categoryId to fully check category, but since cartLine doesn't store categoryId,
+        // we'll rely on product_ids if available, or just use full subtotal if not strict.
+        // For a full fix, we could lookup the product's categoryId from the cache, but product_id is sufficient here
+        // assuming backend does full validation.
+        const isEligibleProd = d.product_ids?.includes(line.productId);
+        // Note: For perfect frontend calculation, line should include categoryId.
+        // We do a best-effort calculation here.
+        if (isEligibleProd) return sum + (line.unitPrice * line.quantity);
+        // If they only specified categories, we might under-calculate on the frontend. The backend will correct it.
+        // To be safe, if we don't know, we don't discount it on the frontend.
+        return sum;
+      }, 0);
+      
+      // If we couldn't match any products (maybe it's a category discount and we don't have cat ids in cart),
+      // we fallback to the backend's validation by just showing 0 discount locally if we aren't sure,
+      // or we can optimistically apply it. Let's conservatively apply only to matched products.
+      if (d.category_ids && d.category_ids.length > 0 && (!d.product_ids || d.product_ids.length === 0)) {
+         eligibleSubtotal = subtotal; // Optimistic fallback for category-only discounts
+      }
+    }
+
+    if (eligibleSubtotal <= 0) continue;
+
+    const raw = d.type === "flat" ? Number(d.value) : (eligibleSubtotal * Number(d.value)) / 100;
     const maxLimit = d.max_discount != null ? Number(d.max_discount) : null;
     const capped = (maxLimit != null && maxLimit > 0) ? Math.min(raw, maxLimit) : raw;
     

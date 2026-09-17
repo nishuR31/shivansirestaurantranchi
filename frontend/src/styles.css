@@ -534,56 +534,10 @@
 }
 
 /* ════════════════════════════════════════════════════
-   UI PRO MAX BASES
+   UI PRO MAX BASES - Claymorphism Only
    ════════════════════════════════════════════════════ */
 
-/* --- Minimalist Base ---
-   Clean typography, high contrast, stripped-back shadows, flat UI. */
-.base-minimalist {
-  --radius: 0.5rem;
-  --shadow-card: 0 4px 12px -2px oklch(0 0 0 / 10%);
-  --shadow-card-hover: 0 8px 24px -4px oklch(0 0 0 / 15%);
-  --shadow-glow: none;
-  --shadow-glow-gold: none;
-  --shadow-header: 0 1px 2px 0 oklch(0 0 0 / 5%);
-  /* Disable glass for minimalist */
-}
-.base-minimalist .glass,
-.base-minimalist .glass-strong {
-  background: var(--card);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-.base-minimalist .aurora-bg {
-  display: none;
-}
-
-/* --- Liquid Glass Base ---
-   Apple-like adaptive translucency, lensing, fluid morphing. */
-.base-liquid-glass {
-  --radius: 1.25rem;
-  --shadow-card: 0 12px 32px -12px oklch(0 0 0 / 40%);
-  --shadow-card-hover: 0 24px 48px -12px
-    color-mix(in oklab, var(--primary) 30%, transparent);
-}
-.base-liquid-glass .glass {
-  background: color-mix(in oklab, var(--card) 45%, transparent);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border: 1px solid oklch(1 1 1 / 15%);
-  box-shadow: inset 0 1px 1px oklch(1 1 1 / 15%);
-}
-.base-liquid-glass .glass-strong {
-  background: color-mix(in oklab, var(--card) 60%, transparent);
-  backdrop-filter: blur(40px) saturate(250%);
-  -webkit-backdrop-filter: blur(40px) saturate(250%);
-  border: 1px solid oklch(1 1 1 / 20%);
-  box-shadow: inset 0 1px 1px oklch(1 1 1 / 20%);
-}
-
-/* --- Claymorphism Base ---
-   Soft 3D, chunky, playful, double shadows, highly rounded. */
-.base-claymorphism {
+:root {
   --radius: 1.5rem;
   --shadow-card:
     inset -4px -4px 8px color-mix(in oklab, var(--background) 20%, transparent),
@@ -594,16 +548,17 @@
     inset 4px 4px 8px color-mix(in oklab, white 20%, transparent),
     12px 12px 24px -4px oklch(0 0 0 / 40%);
 }
-.base-claymorphism .card-3d,
-.base-claymorphism .glass,
-.base-claymorphism .glass-strong {
+
+.card-3d,
+.glass,
+.glass-strong {
   border-radius: var(--radius);
   border: 3px solid var(--border);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--card);
 }
-.base-claymorphism .card-3d-hover {
+.card-3d-hover {
   transform: translateY(-4px) scale(1.02);
 }
 

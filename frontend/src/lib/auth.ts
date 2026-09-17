@@ -1,4 +1,38 @@
 import { useQuery } from "@tanstack/react-query";
+
+// Store a verified customer session in sessionStorage (no JWT needed)
+export function saveCustomerSession(data: {
+  phone: string;
+  name: string;
+  profileToken: string;
+}) {
+  const session = { ...data, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 };
+  sessionStorage.setItem("customer_session", JSON.stringify(session));
+}
+
+export function getCustomerSession(): {
+  phone: string;
+  name: string;
+  profileToken: string;
+  exp: number;
+} | null {
+  try {
+    const raw = sessionStorage.getItem("customer_session");
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    if (session.exp < Date.now()) {
+      sessionStorage.removeItem("customer_session");
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCustomerSession() {
+  sessionStorage.removeItem("customer_session");
+}
 import { fetchAPI } from "./db";
 
 export type UserRole = "USER" | "ADMIN" | "SUPERADMIN";

@@ -8,7 +8,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { getPublicOrder } from "@/lib/orders.functions";
 import { ORDER_FLOW, STATUS_LABEL, type Order } from "@/lib/types";
 import { formatTime } from "@/lib/format";
-import { POLL_INTERVAL } from "@/lib/db";
+import { getPublicSocket } from "@/lib/socket";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/order/$orderId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -56,11 +57,32 @@ function OrderTracking() {
   const query = useSuspenseQuery({
     queryKey: ["public-order", orderId, t],
     queryFn: ({ signal }) => getPublicOrder({ id: orderId, token: t }, { signal }),
-    refetchInterval: POLL_INTERVAL,
   });
 
-  // 15 s polling via refetchInterval above handles live updates.
-  // Supabase realtime has been removed.
+  // Subscribe to real-time updates via Socket.IO
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const socket = getPublicSocket();
+    
+    // Join the room for this specific order
+    socket.emit("track:order", { orderId, token: t });
+    
+    const onOrderUpdate = () => {
+      void queryClient.invalidateQueries({ queryKey: ["public-order", orderId, t] });
+    };
+
+    socket.on("order:updated", onOrderUpdate);
+    socket.on("order:status_changed", onOrderUpdate);
+    socket.on("order:payment_updated", onOrderUpdate);
+    
+    return () => {
+      // Leave the room
+      socket.emit("untrack:order", { orderId });
+      socket.off("order:updated", onOrderUpdate);
+      socket.off("order:status_changed", onOrderUpdate);
+      socket.off("order:payment_updated", onOrderUpdate);
+    };
+  }, [orderId, t, queryClient]);
 
   const payload = query.data;
   if (!payload) {

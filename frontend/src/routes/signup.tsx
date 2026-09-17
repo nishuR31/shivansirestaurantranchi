@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { API_BASE_URL, fetchAPI } from "@/lib/db";
 import { SiteFooter } from "@/components/site-footer";
 import { requestOrderHistoryCode, getOrdersByPhone } from "@/lib/orders.functions";
-import { saveCustomerSession } from "./login";
+import { saveCustomerSession } from "@/lib/auth";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: z.object({

@@ -11,7 +11,7 @@ import { WEB_ORIGIN } from "./envConfig";
 import { env } from "node:process";
 
 let fastifyApp = fastify({ logger: true, exposeHeadRoutes: true });
-parseFloat;
+
 await fastifyApp.register(cors, {
   origin: process.env.NODE_ENV === "production" ? WEB_ORIGIN : true,
   credentials: true,

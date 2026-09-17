@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig.js";
-import env from "../../core/config/envConfig.js";
-import currentVersion from "../../core/utils/helpers/version.js";
-import { sendSuccess } from "../../core/utils/common/response.js";
+import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
+import env from "../../core/config/envConfig";
+import currentVersion from "../../core/utils/helpers/version";
+import { sendSuccess } from "../../core/utils/common/response";
 
 export async function healthRoutes(app: FastifyInstance) {
   app.get("/health", async (_req, res) => {

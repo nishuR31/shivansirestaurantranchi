@@ -8,15 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { discountsQuery, loyaltyQuery, offersQuery } from "@/lib/db";
 import { useDeleteRow, useSaveRow } from "@/lib/admin";
+import { PageLoader } from "@/components/page-loader";
 
 export const Route = createFileRoute("/admin/offers")({
   component: OffersManager,
 });
 
 function OffersManager() {
-  const { data: offers = [] } = useQuery(offersQuery);
-  const { data: discounts = [] } = useQuery(discountsQuery);
-  const { data: loyalty = [] } = useQuery(loyaltyQuery);
+  const { data: offers = [], isLoading: oLoad } = useQuery(offersQuery);
+  const { data: discounts = [], isLoading: dLoad } = useQuery(discountsQuery);
+  const { data: loyalty = [], isLoading: lLoad } = useQuery(loyaltyQuery);
+
+  if (oLoad || dLoad || lLoad) return <PageLoader />;
 
   const saveOffer = useSaveRow("offers", "offers", "Offer saved");
   const deleteOffer = useDeleteRow("offers", "offers");

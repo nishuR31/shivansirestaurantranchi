@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useIsAdmin } from "@/lib/auth";
+import { useIsAdmin, saveCustomerSession, getCustomerSession, clearCustomerSession } from "@/lib/auth";
 import { API_BASE_URL, fetchAPI, apiClient } from "@/lib/db";
 import { SiteFooter } from "@/components/site-footer";
 import { requestOrderHistoryCode, getOrdersByPhone } from "@/lib/orders.functions";
@@ -35,39 +35,7 @@ type Tab = "whatsapp" | "email";
 type EmailStage = "credentials" | "enroll" | "verify";
 type WaStage = "phone" | "otp";
 
-// Store a verified customer session in sessionStorage (no JWT needed)
-export function saveCustomerSession(data: {
-  phone: string;
-  name: string;
-  profileToken: string;
-}) {
-  const session = { ...data, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 };
-  sessionStorage.setItem("customer_session", JSON.stringify(session));
-}
 
-export function getCustomerSession(): {
-  phone: string;
-  name: string;
-  profileToken: string;
-  exp: number;
-} | null {
-  try {
-    const raw = sessionStorage.getItem("customer_session");
-    if (!raw) return null;
-    const session = JSON.parse(raw);
-    if (session.exp < Date.now()) {
-      sessionStorage.removeItem("customer_session");
-      return null;
-    }
-    return session;
-  } catch {
-    return null;
-  }
-}
-
-export function clearCustomerSession() {
-  sessionStorage.removeItem("customer_session");
-}
 
 const emailLoginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),

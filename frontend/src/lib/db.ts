@@ -16,12 +16,13 @@ import type {
   StaffUser,
 } from "./types";
 
+import { getPublicSocket, connectAdminSocket } from "./socket";
+
 export const API_BASE_URL = import.meta.env["VITE_API_BASE_URL"] || "/api/v1";
-export const POLL_INTERVAL = 10000;
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Crucial for Fastify httpOnly cookies
+  withCredentials: true,
 });
 
 apiClient.interceptors.response.use(
@@ -63,12 +64,11 @@ export async function fetchAPI<T>(
   options?: ApiRequestOptions,
 ): Promise<T> {
   const isPost = options?.method && options.method !== "GET";
-  // Auth endpoints live at /api/v1/auth/*, not under /data.
-  // All other endpoints (categories, products, etc.) live under /api/v1/data/*.
   const url =
     endpoint.startsWith("/auth") || endpoint.startsWith("/data")
       ? endpoint
       : `/data${endpoint}`;
+
   try {
     const response = await apiClient({
       url,
@@ -182,13 +182,11 @@ export const customersQuery = queryOptions({
 export const ordersQuery = queryOptions({
   queryKey: ["orders"],
   queryFn: ({ signal }) => fetchAPI<Order[]>("/orders", { signal }),
-  refetchInterval: POLL_INTERVAL,
 });
 
 export const notificationsQuery = queryOptions({
   queryKey: ["notifications"],
   queryFn: ({ signal }) => fetchAPI<AppNotification[]>("/notifications", { signal }),
-  refetchInterval: POLL_INTERVAL,
 });
 
 export function activeOffers(offers: Offer[]) {

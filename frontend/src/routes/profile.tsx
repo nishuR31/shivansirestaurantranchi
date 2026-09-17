@@ -24,12 +24,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Invoice } from "@/components/invoice";
 import { SiteFooter } from "@/components/site-footer";
-import { useIsAdmin } from "@/lib/auth";
-import { fetchAPI, apiClient, POLL_INTERVAL } from "@/lib/db";
+import { useIsAdmin, getCustomerSession, clearCustomerSession } from "@/lib/auth";
+import { fetchAPI, apiClient } from "@/lib/db";
 import { STATUS_LABEL, type Order } from "@/lib/types";
 import { startRegistration } from "@simplewebauthn/browser";
 import { formatDateTime, money } from "@/lib/format";
-import { getCustomerSession, clearCustomerSession } from "./login";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -130,7 +129,7 @@ function CustomerProfile({
       return res as { customer: any; orders: Order[] };
     },
     retry: false,
-    refetchInterval: POLL_INTERVAL,
+    // refetchInterval: POLL_INTERVAL,
   });
 
   const customer = data?.customer;
@@ -521,8 +520,8 @@ function AdminProfile({
                 <h1 className="font-display text-xl font-bold">{displayName}</h1>
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${isSuperAdmin
-                      ? "bg-[image:var(--gradient-primary)] text-primary-foreground"
-                      : "border border-amber-500/30 bg-amber-500/10 text-amber-400"
+                    ? "bg-[image:var(--gradient-primary)] text-primary-foreground"
+                    : "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                     }`}
                 >
                   {roleLabel}

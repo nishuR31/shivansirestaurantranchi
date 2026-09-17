@@ -131,13 +131,11 @@ export const getCustomers = async (req: FastifyRequest, res: FastifyReply) => {
 
 export const getOrders = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const orders = await fetchWithCache("data:orders", 15, () =>
-      prismaApp.order.findMany({
-        include: { order_items: true },
-        orderBy: { created_at: "desc" },
-        take: 100,
-      }),
-    );
+    const orders = await prismaApp.order.findMany({
+      include: { order_items: true },
+      orderBy: { created_at: "desc" },
+      take: 100,
+    });
     return res.send(orders);
   } catch (error: any) {
     logger.error(`Error in getOrders: ${error.message}`);
@@ -147,12 +145,10 @@ export const getOrders = async (req: FastifyRequest, res: FastifyReply) => {
 
 export const getNotifications = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const notifications = await fetchWithCache("data:notifications", 15, () =>
-      prismaApp.appNotification.findMany({
-        orderBy: { created_at: "desc" },
-        take: 60,
-      }),
-    );
+    const notifications = await prismaApp.appNotification.findMany({
+      orderBy: { created_at: "desc" },
+      take: 60,
+    });
     return res.send(notifications);
   } catch (error: any) {
     logger.error(`Error in getNotifications: ${error.message}`);

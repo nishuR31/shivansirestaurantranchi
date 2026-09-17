@@ -1,5 +1,5 @@
-import uploadToImgBB from "./imgbb.js";
-import uploadToSupabase from "./supabase.js";
+import uploadToImgBB from "./imgbb";
+import uploadToSupabase from "./supabase";
 
 type UploadResult = {
   url: string;

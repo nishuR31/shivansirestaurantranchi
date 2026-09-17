@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import env from "../../core/config/envConfig.js";
-import currentVersion from "../../core/utils/helpers/version.js";
-import { sendSuccess } from "../../core/utils/common/response.js";
+import env from "../../core/config/envConfig";
+import currentVersion from "../../core/utils/helpers/version";
+import { sendSuccess } from "../../core/utils/common/response";
 
 export async function pingRoutes(app: FastifyInstance) {
   app.get("/ping", async (req: any, res: any) => {

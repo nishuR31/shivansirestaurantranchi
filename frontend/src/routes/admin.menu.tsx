@@ -20,6 +20,7 @@ import { useDeleteRow, useSaveRow } from "@/lib/admin";
 import { money } from "@/lib/format";
 import type { Category, Product } from "@/lib/types";
 import { toast } from "sonner";
+import { PageLoader } from "@/components/page-loader";
 
 export const Route = createFileRoute("/admin/menu")({
   component: MenuManager,
@@ -62,9 +63,9 @@ async function uploadImage(file: File): Promise<string> {
 }
 
 function MenuManager() {
-  const { data: categories = [] } = useQuery(categoriesQuery);
-  const { data: products = [] } = useQuery(productsQuery);
-  const { data: settings } = useQuery(settingsQuery);
+  const { data: categories = [], isLoading: loadingCats } = useQuery(categoriesQuery);
+  const { data: products = [], isLoading: loadingProds } = useQuery(productsQuery);
+  const { data: settings, isLoading: loadingSettings } = useQuery(settingsQuery);
   const currency = settings?.currency ?? "₹";
 
   const saveProduct = useSaveRow("products", "products", "Menu item saved");
@@ -75,6 +76,10 @@ function MenuManager() {
   const [product, setProduct] = useState<Record<string, unknown> | null>(null);
   const [category, setCategory] = useState<Record<string, unknown> | null>(null);
   const [uploadingFor, setUploadingFor] = useState<"product" | "category" | null>(null);
+
+  if (loadingCats || loadingProds || loadingSettings) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="space-y-8">
