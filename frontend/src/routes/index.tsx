@@ -66,10 +66,10 @@ function Home() {
               to="/scanner"
               role="button"
               aria-label="Scan QR code to place your order"
-              className="group relative flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden rounded-3xl border border-primary/30 bg-primary/5 px-6 py-6 backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:border-primary/60 hover:bg-primary/10 hover:shadow-[0_0_40px_rgba(var(--primary-rgb,124,58,237),0.20)] w-full"
+              className="group relative flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden rounded-3xl border border-primary/30 bg-primary/5 px-6 py-6 transition-colors duration-200 hover:border-primary/60 hover:bg-primary/10 w-full"
             >
               <div
-                className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-primary/10 blur-[80px]"
+                className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-primary/10 blur-[60px] transform-gpu"
                 aria-hidden="true"
               />
               <div className="flex items-center gap-5">
