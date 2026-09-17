@@ -84,7 +84,7 @@ function Home() {
                   <p className="font-display text-lg font-bold text-foreground">
                     Scan the QR at your table
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 max-w-[200px] sm:max-w-none">
+                  <p className="text-xs text-foreground/70 mt-0.5 max-w-[200px] sm:max-w-none">
                     Point your camera, place your order
                   </p>
                 </div>

@@ -74,7 +74,7 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
               onClick={() => setDiet(d)}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                 diet === d
-                  ? "border-primary bg-primary/20 text-primary"
+                  ? "border-primary bg-primary/20 text-foreground"
                   : "border-border text-muted-foreground hover:border-primary/40"
               }`}
             >
@@ -95,7 +95,7 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
           onClick={() => handleCategoryChange("all")}
           className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-all duration-150 ${
             category === "all"
-              ? "border-primary bg-primary/20 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb,124,58,237),0.2)]"
+              ? "border-primary bg-primary/20 text-foreground shadow-[0_0_10px_rgba(var(--primary-rgb,124,58,237),0.2)]"
               : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
           }`}
         >
@@ -110,7 +110,7 @@ function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorer
               onClick={() => handleCategoryChange(c.slug)}
               className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-all duration-150 ${
                 category === c.slug
-                  ? "border-primary bg-primary/20 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb,124,58,237),0.2)]"
+                  ? "border-primary bg-primary/20 text-foreground shadow-[0_0_10px_rgba(var(--primary-rgb,124,58,237),0.2)]"
                   : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
               }`}
             >

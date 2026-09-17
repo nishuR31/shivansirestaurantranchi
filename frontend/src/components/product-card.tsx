@@ -220,7 +220,7 @@ export function ProductCard({
                   size="sm"
                   disabled={!product.is_available}
                   className="rounded-xl text-xs transition-all duration-200 hover:bg-primary/15"
-                  aria-label="Add cooking instructions"
+                  aria-label={`Notes - Add cooking instructions${instructions.length ? ` (${instructions.length})` : ""}`}
                 >
                   Notes{instructions.length ? ` (${instructions.length})` : ""}
                 </Button>

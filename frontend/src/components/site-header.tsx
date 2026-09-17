@@ -74,7 +74,7 @@ export function SiteHeader() {
               <span className="block truncate font-display text-base font-bold leading-tight sm:text-lg">
                 {settings?.name ?? import.meta.env["VITE_BUSINESS_NAME"] ?? "Restaurant"}
               </span>
-              <span className="block truncate text-[11px] text-muted-foreground">
+              <span className="block truncate text-[11px] text-foreground/70">
                 {settings?.tagline ?? "Restaurant & Sweet Shop"}
               </span>
             </span>
