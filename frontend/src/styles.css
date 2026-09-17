@@ -194,14 +194,14 @@
     color-mix(in oklab, var(--primary) 50%, transparent);
   --shadow-header: 0 1px 40px 0 oklch(0 0 0 / 40%);
 
-  /* Default UI base variables (Glassmorphism) */
-  --ui-glass-bg: color-mix(in oklab, var(--card) 58%, transparent);
-  --ui-glass-backdrop: blur(18px) saturate(160%);
-  --ui-glass-border: 1px solid oklch(1 0 0 / 10%);
+  /* Default UI base variables (Premium Glassmorphism) */
+  --ui-glass-bg: linear-gradient(145deg, color-mix(in oklab, var(--card) 65%, transparent), color-mix(in oklab, var(--card) 45%, transparent));
+  --ui-glass-backdrop: blur(24px) saturate(180%);
+  --ui-glass-border: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
   
-  --ui-glass-strong-bg: color-mix(in oklab, var(--card) 72%, transparent);
-  --ui-glass-strong-backdrop: blur(28px) saturate(180%);
-  --ui-glass-strong-border: 1px solid oklch(1 0 0 / 14%);
+  --ui-glass-strong-bg: linear-gradient(145deg, color-mix(in oklab, var(--card) 80%, transparent), color-mix(in oklab, var(--card) 65%, transparent));
+  --ui-glass-strong-backdrop: blur(32px) saturate(200%);
+  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
 /* ════════════════════════════════════════════════════
@@ -547,60 +547,51 @@
    ════════════════════════════════════════════════════ */
 
 .style-minimalist {
+  --radius: 1rem;
   --ui-glass-bg: var(--card);
   --ui-glass-backdrop: none;
-  --ui-glass-border: 1px solid var(--border);
+  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
   
   --ui-glass-strong-bg: var(--card);
   --ui-glass-strong-backdrop: none;
-  --ui-glass-strong-border: 1px solid var(--border);
+  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
 
-  --shadow-card: none;
-  --shadow-card-hover: 0 10px 15px -3px oklch(0 0 0 / 10%);
+  --shadow-card: 0 4px 12px -2px color-mix(in oklab, var(--foreground) 3%, transparent);
+  --shadow-card-hover: 0 10px 24px -4px color-mix(in oklab, var(--foreground) 8%, transparent);
 }
 
 .style-liquid-glass {
-  --ui-glass-bg: color-mix(in oklab, var(--card) 40%, transparent);
-  --ui-glass-backdrop: blur(40px) saturate(200%);
-  --ui-glass-border: 1px solid oklch(1 0 0 / 20%);
+  --radius: 1.25rem;
+  --ui-glass-bg: color-mix(in oklab, var(--card) 65%, transparent);
+  --ui-glass-backdrop: blur(48px) saturate(220%);
+  --ui-glass-border: 1px solid color-mix(in oklab, white 25%, transparent);
   
-  --ui-glass-strong-bg: color-mix(in oklab, var(--card) 50%, transparent);
-  --ui-glass-strong-backdrop: blur(60px) saturate(220%);
-  --ui-glass-strong-border: 1px solid oklch(1 0 0 / 25%);
+  --ui-glass-strong-bg: color-mix(in oklab, var(--card) 75%, transparent);
+  --ui-glass-strong-backdrop: blur(64px) saturate(240%);
+  --ui-glass-strong-border: 1px solid color-mix(in oklab, white 35%, transparent);
+
+  --shadow-card: 0 16px 32px -8px color-mix(in oklab, black 30%, transparent);
+  --shadow-card-hover: 0 24px 48px -12px color-mix(in oklab, black 40%, transparent);
 }
 
 .style-claymorphism {
-  --radius: 1.5rem;
+  --radius: 1.75rem;
   --ui-glass-bg: var(--card);
   --ui-glass-backdrop: none;
-  --ui-glass-border: 3px solid var(--border);
+  --ui-glass-border: 1px solid color-mix(in oklab, var(--foreground) 5%, transparent);
 
   --ui-glass-strong-bg: var(--card);
   --ui-glass-strong-backdrop: none;
-  --ui-glass-strong-border: 3px solid var(--border);
+  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
 
   --shadow-card:
-    inset -4px -4px 8px color-mix(in oklab, var(--background) 20%, transparent),
-    inset 4px 4px 8px color-mix(in oklab, white 20%, transparent),
-    6px 6px 16px -2px oklch(0 0 0 / 30%);
+    inset -4px -4px 12px color-mix(in oklab, var(--background) 40%, transparent),
+    inset 4px 4px 12px color-mix(in oklab, white 15%, transparent),
+    10px 10px 20px -5px color-mix(in oklab, black 35%, transparent);
   --shadow-card-hover:
-    inset -4px -4px 8px color-mix(in oklab, var(--background) 20%, transparent),
-    inset 4px 4px 8px color-mix(in oklab, white 20%, transparent),
-    12px 12px 24px -4px oklch(0 0 0 / 40%);
-}
-
-.style-pro-max {
-  --radius: 1.25rem;
-  --ui-glass-bg: linear-gradient(145deg, color-mix(in oklab, var(--card) 70%, transparent), color-mix(in oklab, var(--card) 40%, transparent));
-  --ui-glass-backdrop: blur(24px) saturate(160%);
-  --ui-glass-border: 1px solid color-mix(in oklab, var(--primary) 20%, transparent);
-
-  --ui-glass-strong-bg: linear-gradient(145deg, color-mix(in oklab, var(--card) 85%, transparent), color-mix(in oklab, var(--card) 60%, transparent));
-  --ui-glass-strong-backdrop: blur(32px) saturate(180%);
-  --ui-glass-strong-border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
-
-  --shadow-card: 0 24px 48px -12px oklch(0 0 0 / 45%);
-  --shadow-card-hover: 0 32px 64px -16px color-mix(in oklab, var(--primary) 60%, transparent);
+    inset -6px -6px 16px color-mix(in oklab, var(--background) 50%, transparent),
+    inset 6px 6px 16px color-mix(in oklab, white 20%, transparent),
+    16px 16px 32px -8px color-mix(in oklab, black 45%, transparent);
 }
 
 /* ════════════════════════════════════════════════════

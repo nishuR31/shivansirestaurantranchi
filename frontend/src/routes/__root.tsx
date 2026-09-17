@@ -275,8 +275,7 @@ function ThemeSync() {
       "style-default",
       "style-minimalist",
       "style-liquid-glass",
-      "style-claymorphism",
-      "style-pro-max"
+      "style-claymorphism"
     );
     root.classList.add(`style-${base}`);
   }, [mode, base]);

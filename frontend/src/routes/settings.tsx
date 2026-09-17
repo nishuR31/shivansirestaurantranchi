@@ -57,11 +57,10 @@ function SettingsPage() {
                 <button
                   key={m.id}
                   onClick={() => handleModeChange(m.id as ThemeMode)}
-                  className={`card-3d p-5 rounded-2xl border-2 transition-all ${
-                    mode === m.id
+                  className={`card-3d p-5 rounded-2xl border-2 transition-all ${mode === m.id
                       ? "border-primary bg-primary/10 shadow-glow"
                       : "border-border bg-card hover:border-primary/50"
-                  }`}
+                    }`}
                 >
                   <div className="font-bold text-foreground">{m.label}</div>
                   <div className="text-xs text-muted-foreground mt-1">{m.desc}</div>
@@ -73,10 +72,7 @@ function SettingsPage() {
           {/* Base/Style Selection */}
           <div className="space-y-4">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
-              UI Base Style{" "}
-              <Badge variant="gold" className="text-xs px-2 py-0.5">
-                Pro Max
-              </Badge>
+              UI Base Style
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -100,20 +96,14 @@ function SettingsPage() {
                   label: "Claymorphism",
                   desc: "Soft 3D, chunky, playful borders",
                 },
-                {
-                  id: "pro-max",
-                  label: "Pro Max",
-                  desc: "Premium iOS-like gradients & shadows",
-                },
               ].map((b) => (
                 <button
                   key={b.id}
                   onClick={() => handleBaseChange(b.id as ThemeBase)}
-                  className={`card-3d p-5 rounded-2xl border-2 transition-all text-left ${
-                    base === b.id
+                  className={`card-3d p-5 rounded-2xl border-2 transition-all text-left ${base === b.id
                       ? "border-accent bg-accent/10 shadow-glow-gold"
                       : "border-border bg-card hover:border-accent/50"
-                  }`}
+                    }`}
                 >
                   <div className="font-bold text-foreground">{b.label}</div>
                   <div className="text-xs text-muted-foreground mt-1">{b.desc}</div>
