@@ -20,6 +20,8 @@ const envSchema = z.object({
   // Database
   ADMIN_DATABASE_URL: z.string().min(1),
   ADMIN_DIRECT_URL: z.string().optional(),
+  AUDIT_DATABASE_URL: z.string().min(1),
+  AUDIT_DIRECT_URL: z.string().optional(),
   APP_DATABASE_URL: z.string().min(1),
   APP_DIRECT_URL: z.string().optional(),
   SALT_ROUND: z.number().optional().default(10),

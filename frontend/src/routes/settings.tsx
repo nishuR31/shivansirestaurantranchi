@@ -77,9 +77,9 @@ function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 {
-                  id: "default",
-                  label: "Glassmorphism",
-                  desc: "Default dark/vibrant glass",
+                  id: "amoled-black",
+                  label: "Amoled Black",
+                  desc: "Pure OLED black, extreme contrast",
                 },
                 {
                   id: "minimalist",

@@ -6,6 +6,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("ADMIN_DATABASE_URL")
+  directUrl = env("ADMIN_DIRECT_URL")
 }
 
 enum Role {

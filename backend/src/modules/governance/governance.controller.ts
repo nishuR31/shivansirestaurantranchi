@@ -42,7 +42,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
     if (!parsed.success) return res.status(400).send({ error: "Invalid request data", details: parsed.error.format() });
 
     const superadmins = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
-    const required_approvals = superadmins > 1 ? 1 : 0; // Requires 1 additional approval if multiple superadmins exist
+    const required_approvals = superadmins > 1 ? superadmins - Math.floor(superadmins / 2) : 0; // Requires ALL other superadmins to approve
 
     const expires_at = new Date();
     expires_at.setHours(expires_at.getHours() + 48);
@@ -90,11 +90,20 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
     if (actionRequest.target_id === user.id) return res.status(400).send({ error: "You cannot vote on a request targeting yourself" });
 
     // Record vote
-    await prismaAdmin.adminActionVote.upsert({
-      where: { request_id_voter_id: { request_id: id, voter_id: user.id } },
-      create: { request_id: id, voter_id: user.id, vote },
-      update: { vote }
+    const existingVote = await prismaAdmin.adminActionVote.findFirst({
+      where: { request_id: id, voter_id: user.id }
     });
+
+    if (existingVote) {
+      await prismaAdmin.adminActionVote.update({
+        where: { id: existingVote.id },
+        data: { vote }
+      });
+    } else {
+      await prismaAdmin.adminActionVote.create({
+        data: { request_id: id, voter_id: user.id, vote }
+      });
+    }
 
     // Check approvals
     const approvalsCount = await prismaAdmin.adminActionVote.count({
@@ -109,20 +118,20 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
 
       // Execution Logic
       if (actionRequest.action_type === "SUSPEND_APP") {
-         const payload = actionRequest.payload as any;
-         await prismaAdmin.restaurantSettings.updateMany({
-           data: {
-             is_suspended: true,
-             shutdown_message: payload?.message ?? "Restaurant suspended",
-             shutdown_code: 402
-           }
-         });
+        const payload = actionRequest.payload as any;
+        await prismaAdmin.restaurantSettings.updateMany({
+          data: {
+            is_suspended: true,
+            shutdown_message: payload?.message ?? "Restaurant suspended",
+            shutdown_code: 402
+          }
+        });
       } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
-         if (actionRequest.target_id) {
-           await prismaAdmin.admin.delete({ where: { id: actionRequest.target_id } });
-         }
+        if (actionRequest.target_id) {
+          await prismaAdmin.admin.delete({ where: { id: actionRequest.target_id } });
+        }
       }
-      
+
       return res.send({ success: true, executed: true });
     }
 

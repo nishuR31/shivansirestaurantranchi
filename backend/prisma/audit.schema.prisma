@@ -1,0 +1,22 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prismaAudit"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AUDIT_DATABASE_URL")
+  directUrl = env("AUDIT_DIRECT_URL")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  adminEmail String
+  action    String
+  table     String
+  recordId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+}

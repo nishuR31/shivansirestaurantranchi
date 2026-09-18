@@ -1,11 +1,11 @@
-import { prismaAdmin } from "../config/databaseConfig";
-import { AuditLog } from "../../generated/prismaAdmin";
+import { prismaAudit } from "../config/databaseConfig";
+import { AuditLog } from "../../generated/prismaAudit";
 import { AuditLogEntry } from "../types";
 import BaseRepository from "./baseRepository";
 
 export default class AuditLogRepository extends BaseRepository<AuditLog> {
   constructor() {
-    super("auditLog", prismaAdmin);
+    super("auditLog", prismaAudit);
   }
 
   async logAction(entry: AuditLogEntry): Promise<AuditLog> {

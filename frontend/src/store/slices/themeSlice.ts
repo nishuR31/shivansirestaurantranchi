@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type ThemeMode = "light" | "dark" | "auto";
-export type ThemeBase = "default" | "minimalist" | "liquid-glass" | "claymorphism";
+export type ThemeBase = "amoled-black" | "minimalist" | "liquid-glass" | "claymorphism";
 
 interface ThemeState {
   mode: ThemeMode;
@@ -11,7 +11,7 @@ interface ThemeState {
 // Read from localStorage if available
 const getInitialState = (): ThemeState => {
   if (typeof window === "undefined") {
-    return { mode: "dark", base: "default" };
+    return { mode: "dark", base: "amoled-black" };
   }
   try {
     const stored = localStorage.getItem("maatara-theme-v1");
@@ -21,7 +21,7 @@ const getInitialState = (): ThemeState => {
   } catch {
     // ignore
   }
-  return { mode: "dark", base: "default" }; // Project defaults to dark mode
+  return { mode: "dark", base: "amoled-black" }; // Project defaults to dark mode
 };
 
 const initialState: ThemeState = getInitialState();

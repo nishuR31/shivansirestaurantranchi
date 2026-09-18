@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import bcrypt from "bcrypt";
-import { prismaAdmin } from "../../core/config/databaseConfig";
+import { prismaAdmin, prismaAudit } from "../../core/config/databaseConfig";
 import {
   NotFoundError,
   ForbiddenError,
@@ -177,17 +177,17 @@ export const updateRole = async (
       },
     });
 
-    await tx.auditLog.create({
-      data: {
-        action: "ROLE_CHANGE",
-        entity: "USER",
-        entityId: id,
-        details: { oldRole: targetUser.role, newRole: role },
-        adminId: requestor.id,
-      },
-    });
-
     return user;
+  });
+
+  await prismaAudit.auditLog.create({
+    data: {
+      action: "ROLE_CHANGE",
+      entity: "USER",
+      entityId: id,
+      details: { oldRole: targetUser.role, newRole: role },
+      adminId: requestor.id,
+    },
   });
 
   return reply.send({ success: true, user: updated });
@@ -212,8 +212,8 @@ export const deleteUser = async (
 
   if (targetUser.role === "SUPERADMIN") {
     const superadminsCount = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
-    const required_approvals = superadminsCount > 1 ? 1 : 0;
-    
+    const required_approvals = superadminsCount > 1 ? superadminsCount as number - Math.floor(superadminsCount / 2) as number : 0;
+
     const expires_at = new Date();
     expires_at.setHours(expires_at.getHours() + 48);
 
@@ -231,8 +231,8 @@ export const deleteUser = async (
 
     return reply.send({
       success: true,
-      message: required_approvals === 0 
-        ? "Deletion queued. Time lock initiated." 
+      message: required_approvals === 0
+        ? "Deletion queued. Time lock initiated."
         : "Governance request created. Deletion requires another SUPERADMIN's approval.",
       request: newRequest
     });
@@ -240,15 +240,16 @@ export const deleteUser = async (
 
   await prismaAdmin.$transaction(async (tx) => {
     await tx.admin.delete({ where: { id } });
-    await tx.auditLog.create({
-      data: {
-        action: "DELETE_USER",
-        entity: "USER",
-        entityId: id,
-        details: { deletedEmail: targetUser.email, deletedRole: targetUser.role },
-        adminId: requestor.id,
-      },
-    });
+  });
+
+  await prismaAudit.auditLog.create({
+    data: {
+      action: "DELETE_USER",
+      entity: "USER",
+      entityId: id,
+      details: { deletedEmail: targetUser.email, deletedRole: targetUser.role },
+      adminId: requestor.id,
+    },
   });
 
   return reply.send({ success: true, message: "User deleted successfully" });

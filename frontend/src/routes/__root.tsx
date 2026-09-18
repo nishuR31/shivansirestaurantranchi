@@ -272,7 +272,7 @@ function ThemeSync() {
 
     // Remove previous bases
     root.classList.remove(
-      "style-default",
+      "style-amoled-black",
       "style-minimalist",
       "style-liquid-glass",
       "style-claymorphism"

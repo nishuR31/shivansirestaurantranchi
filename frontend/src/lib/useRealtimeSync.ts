@@ -78,7 +78,10 @@ export function useRealtimeSync() {
       void queryClient.invalidateQueries({ queryKey: ["menu"] });
     };
 
-    const onSettingsUpdated = () => {
+    const onSettingsUpdated = (payload: { settings: any }) => {
+      if (payload?.settings) {
+        queryClient.setQueryData(["settings"], payload.settings);
+      }
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     };
 
@@ -121,7 +124,10 @@ export function useRealtimeSync() {
       void queryClient.invalidateQueries({ queryKey: ["offers"] });
     };
     
-    const onSettingsUpdated = () => {
+    const onSettingsUpdated = (payload: { settings: any }) => {
+      if (payload?.settings) {
+        queryClient.setQueryData(["settings"], payload.settings);
+      }
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     };
 

@@ -508,9 +508,14 @@ export default class AuthService {
 
     if (verification.verified && verification.registrationInfo) {
       const { credential } = verification.registrationInfo;
-      // credential.id is Uint8Array in @simplewebauthn v13; Prisma Bytes field requires a Buffer
-      const credentialIDBuffer = Buffer.from(credential.id);
-      const credentialPublicKeyBuffer = Buffer.from(credential.publicKey);
+      // credential.id might be a base64url string or Uint8Array in @simplewebauthn v13
+      const credentialIDBuffer = typeof credential.id === "string" 
+        ? Buffer.from(credential.id, "base64url") 
+        : Buffer.from(credential.id);
+        
+      const credentialPublicKeyBuffer = typeof credential.publicKey === "string"
+        ? Buffer.from(credential.publicKey, "base64url")
+        : Buffer.from(credential.publicKey);
 
       await repo.addPasskey({
         credentialID: credentialIDBuffer,
@@ -536,15 +541,21 @@ export default class AuthService {
   }
 
   async generateWebAuthnAuthentication(email: string, overrideRpID?: string) {
-    const user = await userRepo.findByEmail(email);
+    let user: any = await adminRepo.findByEmail(email);
+    let repo: any = adminRepo;
+    if (!user) {
+      user = await userRepo.findByEmail(email);
+      repo = userRepo;
+    }
     if (!user) throw new NotFoundError("User not found.");
 
-    const passkeys = await prismaAdmin.passkey.findMany({ where: { adminId: user.id } });
+    const passkeys = user.role === "ADMIN" || user.role === "SUPERADMIN"
+      ? await prismaAdmin.passkey.findMany({ where: { adminId: user.id } })
+      : await prismaApp.passkey.findMany({ where: { userId: user.id } });
 
     const options = await generateAuthenticationOptions({
       rpID: overrideRpID || rpID,
       allowCredentials: passkeys.map((key: any) => ({
-        // Prisma Bytes returns Buffer; @simplewebauthn v13 needs base64url string
         id: Buffer.isBuffer(key.credentialID)
           ? key.credentialID.toString("base64url")
           : String(key.credentialID),
@@ -553,7 +564,7 @@ export default class AuthService {
       userVerification: "preferred",
     });
 
-    await userRepo.update(user.id, { currentChallenge: options.challenge });
+    await repo.update(user.id, { currentChallenge: options.challenge });
 
     return options;
   }
@@ -564,7 +575,12 @@ export default class AuthService {
     overrideOrigin?: string,
     overrideRpID?: string
   ) {
-    const user = await userRepo.findByEmail(email);
+    let user: any = await adminRepo.findByEmail(email);
+    let repo: any = adminRepo;
+    if (!user) {
+      user = await userRepo.findByEmail(email);
+      repo = userRepo;
+    }
     if (!user) throw new NotFoundError("User not found.");
 
     if (!user.currentChallenge) {
@@ -615,12 +631,19 @@ export default class AuthService {
     }
 
     if (verification.verified && verification.authenticationInfo) {
-      await prismaAdmin.passkey.update({
-        where: { id: passkey.id },
-        data: { counter: BigInt(verification.authenticationInfo.newCounter) },
-      });
+      if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
+        await prismaAdmin.passkey.update({
+          where: { id: passkey.id },
+          data: { counter: BigInt(verification.authenticationInfo.newCounter) },
+        });
+      } else {
+        await prismaApp.passkey.update({
+          where: { id: passkey.id },
+          data: { counter: BigInt(verification.authenticationInfo.newCounter) },
+        });
+      }
 
-      await userRepo.update(user.id, { currentChallenge: null, lastLogin: new Date() });
+      await repo.update(user.id, { currentChallenge: null, lastLogin: new Date() });
 
       const payload: JwtPayload = {
         id: user.id,
@@ -630,7 +653,7 @@ export default class AuthService {
       const tokens = generateTokenPair(payload);
 
       await storeRefreshToken(user.id, tokens.refreshToken);
-      await userRepo.updateRefreshToken(user.id, tokens.refreshToken);
+      await repo.updateRefreshToken(user.id, tokens.refreshToken);
 
       const safeUser = { ...user } as any;
       delete safeUser.password;

@@ -158,6 +158,24 @@ export const deleteRow = async (req: FastifyRequest, res: FastifyReply) => {
       emitTableStatusChanged({ id });
     }
 
+    // Log destructive action to Audit DB
+    const user = req.user as any;
+    if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN")) {
+      try {
+        await prismaAudit.auditLog.create({
+          data: {
+            adminId: user.id,
+            adminEmail: user.email || "unknown",
+            action: "DELETE",
+            table: table,
+            recordId: id,
+          }
+        });
+      } catch (auditErr: any) {
+        logger.error(`Failed to write audit log for deleteRow: ${auditErr.message}`);
+      }
+    }
+
     return res.send({ ok: true });
   } catch (error: any) {
     logger.error(`Error in deleteRow (${(req.params as any).table}): ${error.message}`);

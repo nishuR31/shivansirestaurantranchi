@@ -1,3 +1,4 @@
+import { PrismaClient as PrismaAuditClient } from "../../generated/prismaAudit";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient as PrismaAdminClient } from "../../generated/prismaAdmin";
 import { PrismaClient as PrismaAppClient } from "../../generated/prismaApp";
@@ -7,6 +8,7 @@ import logger from "./loggerConfig";
 
 const connectionStringAdmin = env.ADMIN_DATABASE_URL;
 const connectionStringApp = env.APP_DATABASE_URL;
+const connectionStringAudit = env.AUDIT_DATABASE_URL;
 
 const adapterAdmin = new PrismaPg({
   connectionString: connectionStringAdmin,
@@ -25,6 +27,16 @@ const adapterApp = new PrismaPg({
   connectionTimeoutMillis: 30_000,
 });
 const basePrismaApp = new PrismaAppClient({ adapter: adapterApp });
+
+const adapterAudit = new PrismaPg({
+  connectionString: connectionStringAudit,
+  max: 5,
+  min: 1,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 30_000,
+});
+const basePrismaAudit = new PrismaAuditClient({ adapter: adapterAudit });
+export const prismaAudit = basePrismaAudit;
 
 interface UserData {
   password?: string;
@@ -75,6 +87,7 @@ function shutDownHandler(signal: string) {
     logger.info(`Received ${signal}, shutting down gracefully.`);
     await basePrismaAdmin.$disconnect();
     await basePrismaApp.$disconnect();
+    await basePrismaAudit.$disconnect();
     logger.info(`Database connections closed.`);
     process.exit(0);
   };
@@ -83,4 +96,4 @@ function shutDownHandler(signal: string) {
 process.on("SIGINT", shutDownHandler("SIGINT"));
 process.on("SIGTERM", shutDownHandler("SIGTERM"));
 
-export default { prismaApp, prismaAdmin };
+export default { prismaApp, prismaAdmin, prismaAudit };

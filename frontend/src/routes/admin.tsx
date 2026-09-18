@@ -11,14 +11,17 @@ import {
   BarChart3,
   Boxes,
   ClipboardList,
+  Home,
   LayoutGrid,
   Loader2,
   LogOut,
   Settings,
   Star,
+  LucideShieldX,
   Tag,
   Users,
   ShieldCheck,
+  ShieldAlert,
   UtensilsCrossed,
   UserCircle2,
   Palette,
@@ -56,6 +59,7 @@ const NAV = [
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/staff", label: "Staff", icon: ShieldCheck },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { to: "/admin/audit", label: "Audit Logs", icon: LucideShieldX },
   { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/governance", label: "Governance", icon: Lock },
 ] as const;
@@ -121,11 +125,10 @@ function AdminLayout() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`relative flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
-                  active
-                    ? "bg-[image:var(--gradient-primary)] text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                }`}
+                className={`relative flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-all duration-200 ${active
+                  ? "bg-[image:var(--gradient-primary)] text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                  }`}
               >
                 <item.icon className="size-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.label}</span>
@@ -141,6 +144,14 @@ function AdminLayout() {
 
           {/* ── Utility buttons ── */}
           <div className="ml-auto flex shrink-0 items-center gap-1 pl-1">
+            <Link
+              to="/"
+              aria-label="Go to app home"
+              title="App Home"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors"
+            >
+              <Home className="size-5" />
+            </Link>
             <Link
               to="/settings"
               aria-label="Theme settings"
