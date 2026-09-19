@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useState, useDeferredValue } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useSuspenseQueries } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,9 +22,9 @@ export function MenuExplorer(props: MenuExplorerProps) {
 }
 
 function MenuExplorerContent({ initialCategory, onCategoryChange }: MenuExplorerProps) {
-  const { data: categories } = useSuspenseQuery(categoriesQuery);
-  const { data: products } = useSuspenseQuery(productsQuery);
-  const { data: settings } = useSuspenseQuery(settingsQuery);
+  const [{ data: categories }, { data: products }, { data: settings }] = useSuspenseQueries({
+    queries: [categoriesQuery, productsQuery, settingsQuery],
+  });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(initialCategory ?? "all");
 
