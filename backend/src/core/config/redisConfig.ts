@@ -12,6 +12,9 @@ const redisOptions = {
 const cache = (env.REDIS_URL_CACHE ? new Redis(env.REDIS_URL_CACHE, redisOptions) : null) as unknown as Redis;
 const rateLimit = (env.REDIS_URL_RATELIMIT ? new Redis(env.REDIS_URL_RATELIMIT, redisOptions) : null) as unknown as Redis;
 
+if (cache) cache.on("error", (err) => logger.warn({ err }, "[Redis Cache] error event"));
+if (rateLimit) rateLimit.on("error", (err) => logger.warn({ err }, "[Redis Rate Limit] error event"));
+
 export async function connectRedisCache(): Promise<Redis | null> {
   if (cache && cache.status !== "ready") {
     try {

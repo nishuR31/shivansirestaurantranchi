@@ -2,8 +2,9 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { prismaApp, prismaAdmin, prismaAudit } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { z } from "zod";
-import { sendError, sendSuccess } from "../../core/utils/common/response";
-import { STATUS_CODES } from "../../core/utils/common/constants";
+import { sendError, sendSuccess } from "../../core/utils/response/responseHandler";
+import { STATUS_CODES } from "../../core/utils/response/statusCodes";
+import { cache } from "../../core/config/redisConfig";
 
 export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
   try {
@@ -83,6 +84,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
             shutdown_code: 402
           }
         });
+        if (cache) await cache.del("data:settings");
       } else if (parsed.data.action_type === "DELETE_SUPERADMIN") {
         if (parsed.data.target_id) {
           await prismaAdmin.admin.delete({ where: { id: parsed.data.target_id } });
@@ -183,6 +185,7 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
               shutdown_code: 402
             }
           });
+          if (cache) await cache.del("data:settings");
         } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
           if (actionRequest.target_id) {
             const superadminCount = await tx.admin.count({ where: { role: "SUPERADMIN" } });

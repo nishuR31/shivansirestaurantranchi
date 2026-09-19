@@ -111,7 +111,7 @@ export async function fetchAPI<T>(
     const errorObj = data?.error || data;
 
     const code = errorObj?.code || data?.code || "UNKNOWN_ERROR";
-    let message = errorObj?.message || data?.message || typeof errorObj === "string" ? errorObj : null;
+    let message = errorObj?.message || data?.message || (typeof errorObj === "string" ? errorObj : null);
     const requestId = errorObj?.requestId || data?.requestId || error.response?.headers?.["x-request-id"];
     const details = errorObj?.details || data?.details;
 

@@ -15,4 +15,9 @@ export default async function settingsRoutes(app: FastifyInstance) {
     { preHandler: [authenticate as any, requireSuperAdmin as any] },
     settingsController.saveOwnerSettings,
   );
+  app.post(
+    "/config",
+    { preHandler: [authenticate as any, requireSuperAdmin as any] },
+    settingsController.saveAppConfig,
+  );
 }

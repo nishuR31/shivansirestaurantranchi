@@ -56,14 +56,35 @@ export const getOwnerSettings = async (req: FastifyRequest, res: FastifyReply) =
 
 export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const { ownerEmail, whatsappPhoneNumberId, whatsappToken } = req.body as any;
+    const data = req.body as any;
+    // Don't update id
+    delete data.id;
 
     const settings = await prismaAdmin.restaurantSettings.findFirst();
     if (!settings) {
       await prismaAdmin.restaurantSettings.create({
-        data: { name: env.BUSINESS_NAME },
+        data: { name: env.BUSINESS_NAME, ...data },
+      });
+    } else {
+      await prismaAdmin.restaurantSettings.updateMany({
+        data,
       });
     }
+
+    if (cache) {
+      await cache.del("data:settings");
+    }
+
+    return res.send({ ok: true });
+  } catch (error: any) {
+    logger.error(`Error in saveOwnerSettings: ${error.message}`);
+    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: error.message } });
+  }
+};
+
+export const saveAppConfig = async (req: FastifyRequest, res: FastifyReply) => {
+  try {
+    const { ownerEmail, whatsappPhoneNumberId, whatsappToken } = req.body as any;
 
     const config = await prismaAdmin.appConfig.findFirst();
     const configData: any = {
