@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { ArrowRight, QrCode, Sparkles, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -311,7 +311,7 @@ function Section({
 }
 
 function HeroRating() {
-  const { data } = useSuspenseQuery(googleRatingsQuery);
+  const { data } = useQuery(googleRatingsQuery);
   if (!data || !data.rating) return <span>No ratings yet</span>;
   return (
     <span>
@@ -343,7 +343,7 @@ function ReviewsFallback() {
 }
 
 function GoogleReviewsSection() {
-  const { data } = useSuspenseQuery(googleRatingsQuery);
+  const { data } = useQuery(googleRatingsQuery);
   const reviews = data?.reviews || [];
 
   if (reviews.length === 0) return null;

@@ -34,7 +34,7 @@ export const getSettings = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(settings || null);
   } catch (error: any) {
     logger.error(`Error in getSettings: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: "Internal Server Error" } });
   }
 };
 
@@ -50,7 +50,7 @@ export const getOwnerSettings = async (req: FastifyRequest, res: FastifyReply) =
     });
   } catch (error: any) {
     logger.error(`Error in getOwnerSettings: ${error.message}`);
-    return res.status(500).send({ error: error.message });
+    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: error.message } });
   }
 };
 
@@ -87,6 +87,6 @@ export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) 
     return res.send({ ok: true });
   } catch (error: any) {
     logger.error(`Error in saveOwnerSettings: ${error.message}`);
-    return res.status(500).send({ error: error.message });
+    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: error.message } });
   }
 };

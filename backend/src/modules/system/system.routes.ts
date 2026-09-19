@@ -25,7 +25,7 @@ export default async function systemRoutes(app: FastifyInstance) {
         ]);
         return res.send({ logs, total, page: skip / take + 1, limit: take });
       } catch (error: any) {
-        return res.status(500).send({ error: error.message });
+        return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: error.message } });
       }
     }
   );
