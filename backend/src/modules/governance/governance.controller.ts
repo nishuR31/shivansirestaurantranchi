@@ -157,7 +157,7 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
           const payload = actionRequest.payload as any;
           await tx.restaurantSettings.updateMany({
             data: {
-              is_suspended: true,
+              is_suspended: payload?.is_suspended ?? true,
               shutdown_message: payload?.message ?? "Restaurant suspended",
               shutdown_code: 402
             }

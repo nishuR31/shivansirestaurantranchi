@@ -4,7 +4,16 @@ import { routeTree } from "./routeTree.gen";
 import { PageLoader } from "@/components/page-loader";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: (failureCount, error: any) => {
+          if (error?.status >= 400 && error?.status < 500) return false;
+          return failureCount < 2;
+        },
+      },
+    },
+  });
 
   const router = createRouter({
     routeTree,

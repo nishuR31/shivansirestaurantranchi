@@ -48,7 +48,7 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: str
 
     const modelName = modelMap[table];
     if (!modelName) {
-      return res.status(400).send({ error: `Invalid table: ${table}` });
+      return res.status(400).send({ success: false, error: { code: "INVALID_TABLE", message: `Invalid table: ${table}` } });
     }
 
     // Convert string dates to Date objects for Prisma
@@ -80,11 +80,11 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: str
       // Fallback Backend validation for percent limits
       if (data.discount_percent !== undefined) {
         const p = Number(data.discount_percent);
-        if (p < 0 || p > 100) return res.status(400).send({ error: "Discount percent must be between 0 and 100" });
+        if (p < 0 || p > 100) return res.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Discount percent must be between 0 and 100" } });
       }
       if (table === "discounts" && data.type === "percent" && data.value !== undefined) {
         const v = Number(data.value);
-        if (v < 0 || v > 100) return res.status(400).send({ error: "Percentage value must be between 0 and 100" });
+        if (v < 0 || v > 100) return res.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Percentage value must be between 0 and 100" } });
       }
 
       if (table === "discounts" || table === "offers") {
