@@ -22,7 +22,7 @@ export const getAppConfig = async (opts?: { signal?: AbortSignal }) => {
 
 export const saveAppConfig = async (input: unknown) => {
   const data = saveSchema.parse(input);
-  await fetchAPI("/settings/owner", {
+  await fetchAPI("/settings/config", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

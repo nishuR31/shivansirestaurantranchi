@@ -309,8 +309,8 @@ function SuspensionGuard({ children }: { children: ReactNode }) {
     return <StartupSplash onComplete={() => {}} />;
   }
 
-  // Always allow access to the login page so superadmins can log in and disable the shutdown
-  if (pathname.startsWith("/login")) {
+  // Always allow access to the login and auth pages so superadmins can log in and disable the shutdown
+  if (pathname.startsWith("/login") || pathname.startsWith("/auth")) {
     return <>{children}</>;
   }
 

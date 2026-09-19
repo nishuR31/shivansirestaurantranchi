@@ -60,13 +60,10 @@ export const createUser = async (
   const requestor = req.user!;
   const cleanEmail = email.trim().toLowerCase();
 
-  if (!["USER", "ADMIN", "SUPERADMIN"].includes(role))
-    throw new BadRequestError("Invalid role");
-  if (!cleanEmail || !password) throw new BadRequestError("Email and password are required");
+  if (!["USER", "ADMIN"].includes(role))
+    throw new BadRequestError("Only USER and ADMIN roles can be created directly");
 
-  // Admin cannot create a SUPERADMIN
-  if (requestor.role === "ADMIN" && role === "SUPERADMIN")
-    throw new ForbiddenError("Admins cannot create SUPERADMIN accounts");
+  if (!cleanEmail || !password) throw new BadRequestError("Email and password are required");
 
   const existing = await prismaAdmin.admin.findUnique({ where: { email: cleanEmail } });
   if (existing) throw new BadRequestError("A user with this email already exists");
@@ -145,23 +142,16 @@ export const updateRole = async (
   const { role } = req.body;
   const requestor = req.user!;
 
-  if (!["USER", "ADMIN", "SUPERADMIN"].includes(role))
-    throw new BadRequestError("Invalid role");
+  if (!["USER", "ADMIN"].includes(role))
+    throw new BadRequestError("Only USER and ADMIN roles can be assigned directly");
 
   const targetUser = await prismaAdmin.admin.findUnique({ where: { id } });
   if (!targetUser) throw new NotFoundError("User not found");
 
-  // Protect root superadmin
-  if (targetUser.email === ROOT_EMAIL && role !== "SUPERADMIN")
-    throw new ForbiddenError("The root SUPERADMIN cannot be demoted.");
+  if (targetUser.role === "SUPERADMIN")
+    throw new ForbiddenError("Cannot demote a SUPERADMIN directly. Use the Governance system.");
 
   assertCanModify(requestor.role, targetUser.role, targetUser.id, requestor.id);
-
-  if (requestor.role === "ADMIN") {
-    if (role === "SUPERADMIN") {
-      throw new ForbiddenError("Only SUPERADMIN can assign SUPERADMIN role");
-    }
-  }
 
   const updated = await prismaAdmin.$transaction(async (tx) => {
     const user = await tx.admin.update({
@@ -212,31 +202,7 @@ export const deleteUser = async (
     throw new ForbiddenError("The root SUPERADMIN cannot be deleted");
 
   if (targetUser.role === "SUPERADMIN") {
-    const superadminsCount = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
-    const required_approvals = Math.max(superadminsCount - 1, 0);
-
-    const expires_at = new Date();
-    expires_at.setHours(expires_at.getHours() + 48);
-
-    const newRequest = await prismaAdmin.adminActionRequest.create({
-      data: {
-        requester_id: requestor.id,
-        action_type: "DELETE_SUPERADMIN",
-        target_id: id,
-        payload: { email: targetUser.email },
-        required_approvals,
-        status: required_approvals === 0 ? "TIME_LOCKED" : "PENDING",
-        expires_at
-      }
-    });
-
-    return reply.send({
-      success: true,
-      message: required_approvals === 0
-        ? "Deletion queued. Time lock initiated."
-        : "Governance request created. Deletion requires another SUPERADMIN's approval.",
-      request: newRequest
-    });
+    throw new ForbiddenError("Cannot delete a SUPERADMIN directly. Use the Governance system.");
   }
 
   await prismaAdmin.$transaction(async (tx) => {

@@ -5,6 +5,9 @@ import { z } from "zod";
 import { sendError, sendSuccess } from "../../core/utils/common/response";
 import { STATUS_CODES } from "../../core/utils/common/constants";
 import { cache } from "../../core/config/redisConfig";
+import { emitSettingsUpdated } from "../../core/providers/socketEmitter";
+import env from "../../core/config/envConfig";
+import { sendWhatsAppMessage } from "../../core/utils/whatsapp";
 
 export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
   try {
@@ -36,11 +39,29 @@ export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
   }
 };
 
-const requestSchema = z.object({
-  action_type: z.enum(["SUSPEND_APP", "DELETE_SUPERADMIN", "MODIFY_API_KEYS"]),
-  target_id: z.string().optional().nullable(),
-  payload: z.any().optional(),
-});
+const requestSchema = z.discriminatedUnion("action_type", [
+  z.object({
+    action_type: z.literal("SUSPEND_APP"),
+    target_id: z.string().optional().nullable(),
+    payload: z.object({
+      is_suspended: z.boolean(),
+      message: z.string().optional(),
+    }),
+  }),
+  z.object({
+    action_type: z.literal("DELETE_SUPERADMIN"),
+    target_id: z.string(),
+    payload: z.object({}).optional(),
+  }),
+  z.object({
+    action_type: z.literal("MODIFY_API_KEYS"),
+    target_id: z.string().optional().nullable(),
+    payload: z.object({
+      whatsapp_token: z.string().optional(),
+      whatsapp_phone_number_id: z.string().optional(),
+    }).optional(),
+  })
+]);
 
 export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
   try {
@@ -50,13 +71,20 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
     const parsed = requestSchema.safeParse(req.body);
     if (!parsed.success) return sendError(res, "Invalid request data", STATUS_CODES.BAD_REQUEST, { details: parsed.error.format() });
 
-    const superadmins = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
+    const activeSuperadmins = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN", isActive: true } });
     
-    // Policy: every other SUPERADMIN must approve
-    let required_approvals = Math.max(superadmins - 1, 0);
+    // Policy: every other active SUPERADMIN must approve
+    const required_approvals = Math.max(activeSuperadmins - 1, 0);
 
-    if (parsed.data.action_type === "SUSPEND_APP") {
-      required_approvals = 0; // Emergency actions execute immediately
+    // Root protections
+    if (parsed.data.action_type === "DELETE_SUPERADMIN" && parsed.data.target_id) {
+       const target = await prismaAdmin.admin.findUnique({ where: { id: parsed.data.target_id } });
+       if (target?.email === env.ROOT_EMAIL) {
+         return sendError(res, "Cannot propose deletion of the ROOT superadmin", STATUS_CODES.FORBIDDEN);
+       }
+       if (activeSuperadmins <= 1 && target?.isActive) {
+         return sendError(res, "Cannot propose deletion of the last active SUPERADMIN", STATUS_CODES.FORBIDDEN);
+       }
     }
 
     const expires_at = new Date();
@@ -76,7 +104,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
 
     if (required_approvals === 0) {
       if (parsed.data.action_type === "SUSPEND_APP") {
-        const payload = parsed.data.payload as any;
+        const payload = parsed.data.payload;
         await prismaAdmin.restaurantSettings.updateMany({
           data: {
             is_suspended: payload?.is_suspended ?? true,
@@ -84,7 +112,12 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
             shutdown_code: 402
           }
         });
-        if (cache) await cache.del("data:settings");
+        try {
+          if (cache) await cache.del("data:settings");
+          emitSettingsUpdated({ is_suspended: payload?.is_suspended ?? true, shutdown_message: payload?.message ?? "Restaurant suspended", shutdown_code: 402 });
+        } catch (e) {
+          logger.error("Failed to invalidate cache or emit event");
+        }
       } else if (parsed.data.action_type === "DELETE_SUPERADMIN") {
         if (parsed.data.target_id) {
           await prismaAdmin.admin.delete({ where: { id: parsed.data.target_id } });
@@ -102,7 +135,19 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
 
-    // Send notifications to all other superadmins here...
+    // Send notifications to all other active superadmins asynchronously
+    prismaAdmin.admin.findMany({
+      where: { role: "SUPERADMIN", isActive: true, id: { not: user.id } }
+    }).then(otherSuperadmins => {
+      for (const sa of otherSuperadmins) {
+        if (sa.phone) {
+          sendWhatsAppMessage(
+            sa.phone,
+            `🛡️ *Governance Proposal Alert*\n\n${user.name} has proposed a new action: *${parsed.data.action_type}*.\n\nPlease log in to the admin dashboard to review and vote.`
+          ).catch(e => logger.error(`Failed to notify superadmin ${sa.id}: ${e.message}`));
+        }
+      }
+    }).catch(e => logger.error(`Failed to fetch superadmins for notification: ${e.message}`));
 
     return sendSuccess(res, "Action requested", STATUS_CODES.OK, { request: newRequest });
   } catch (error: any) {
@@ -139,16 +184,17 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
       if (actionRequest.requester_id === user.id) throw new Error("You cannot vote on your own request");
       if (actionRequest.target_id === user.id) throw new Error("You cannot vote on a request targeting yourself");
 
-      // Record vote (upsert handles existing votes safely using the unique constraint)
-      await tx.adminActionVote.upsert({
+      // Check if user already voted
+      const existingVote = await tx.adminActionVote.findUnique({
         where: {
-          request_id_voter_id: {
-            request_id: id,
-            voter_id: user.id
-          }
-        },
-        update: { vote },
-        create: { request_id: id, voter_id: user.id, vote }
+          request_id_voter_id: { request_id: id, voter_id: user.id }
+        }
+      });
+      if (existingVote) throw new Error("You have already voted on this request");
+
+      // Record vote (create inside transaction ensures immutability)
+      await tx.adminActionVote.create({
+        data: { request_id: id, voter_id: user.id, vote }
       });
 
       // Check approvals
@@ -175,6 +221,10 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
           data: { status: "EXECUTED", approvals: approvalsCount }
         });
 
+        let suspension_changed = false;
+        let new_suspension_state = false;
+        let new_shutdown_message = "";
+
         // Execution Logic
         if (actionRequest.action_type === "SUSPEND_APP") {
           const payload = actionRequest.payload as any;
@@ -185,7 +235,9 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
               shutdown_code: 402
             }
           });
-          if (cache) await cache.del("data:settings");
+          suspension_changed = true;
+          new_suspension_state = payload?.is_suspended ?? true;
+          new_shutdown_message = payload?.message ?? "Restaurant suspended";
         } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
           if (actionRequest.target_id) {
             const superadminCount = await tx.admin.count({ where: { role: "SUPERADMIN" } });
@@ -212,11 +264,20 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
              });
            }
         }
-        return { executed: true, rejected: false, action_type: actionRequest.action_type };
+        return { executed: true, rejected: false, action_type: actionRequest.action_type, suspension_changed, new_suspension_state, new_shutdown_message };
       }
 
-      return { executed: false, rejected: false, action_type: actionRequest.action_type };
+      return { executed: false, rejected: false, action_type: actionRequest.action_type, suspension_changed: false, new_suspension_state: false, new_shutdown_message: "" };
     });
+
+    if (result.suspension_changed) {
+      try {
+        if (cache) await cache.del("data:settings");
+        emitSettingsUpdated({ is_suspended: result.new_suspension_state, shutdown_message: result.new_shutdown_message, shutdown_code: 402 });
+      } catch (err) {
+        logger.error("Failed to update cache or emit settings");
+      }
+    }
 
     await prismaAudit.auditLog.create({
       data: {
@@ -259,6 +320,7 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
         error.message === "Request is no longer pending" ||
         error.message === "You cannot vote on your own request" ||
         error.message === "You cannot vote on a request targeting yourself" ||
+        error.message === "You have already voted on this request" ||
         error.message === "Cannot delete the last SUPERADMIN" ||
         error.message === "Target is not a valid SUPERADMIN") {
         return sendError(res, error.message, STATUS_CODES.BAD_REQUEST);

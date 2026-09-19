@@ -89,6 +89,19 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
       return res.status(400).send({ error: "Idempotency-Key required" });
     }
 
+    const settings = await prismaAdmin.restaurantSettings.findFirst();
+    if (settings?.is_suspended) {
+      return res.status(settings.shutdown_code ?? 503).send({
+        success: false,
+        error: {
+          code: "RESTAURANT_SUSPENDED",
+          message:
+            settings.shutdown_message ??
+            "Ordering is temporarily unavailable.",
+        },
+      });
+    }
+
     const normalizedPhone = normalizePhone(data.customerPhone);
 
     // 1. Fetch related data
@@ -96,7 +109,6 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
     const products = await prismaApp.product.findMany({
       where: { id: { in: productIds as string[] } },
     });
-    const settings = await prismaAdmin.restaurantSettings.findFirst();
     const discounts = await prismaApp.discount.findMany({ where: { is_active: true } });
     const offers = await prismaApp.offer.findMany({ where: { is_active: true } });
     const allDiscounts = [

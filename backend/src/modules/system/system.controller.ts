@@ -44,6 +44,14 @@ const cacheKeyMap: Record<string, string> = {
 
 export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: string) => {
   try {
+    const FORBIDDEN_TABLES = ["restaurant_settings", "app_config", "users", "adminActionRequest"];
+    if (FORBIDDEN_TABLES.includes(table)) {
+      return res.status(403).send({
+        success: false,
+        error: { code: "FORBIDDEN", message: `Direct CRUD operations on ${table} are forbidden. Use dedicated endpoints.` }
+      });
+    }
+
     let data = req.body as any;
 
     const modelName = modelMap[table];
@@ -188,6 +196,14 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: str
 
 export const deleteRow = async (req: FastifyRequest, res: FastifyReply, table: string) => {
   try {
+    const FORBIDDEN_TABLES = ["restaurant_settings", "app_config", "users", "adminActionRequest"];
+    if (FORBIDDEN_TABLES.includes(table)) {
+      return res.status(403).send({
+        success: false,
+        error: { code: "FORBIDDEN", message: `Direct CRUD operations on ${table} are forbidden. Use dedicated endpoints.` }
+      });
+    }
+
     const { id } = req.params as any;
 
     const modelName = modelMap[table];

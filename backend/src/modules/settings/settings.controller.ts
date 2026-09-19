@@ -60,6 +60,14 @@ export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) 
     // Don't update id
     delete data.id;
 
+    if (
+      Object.hasOwn(data, "is_suspended") ||
+      Object.hasOwn(data, "shutdown_code") ||
+      Object.hasOwn(data, "shutdown_message")
+    ) {
+      return res.status(403).send({ success: false, error: { code: "GOVERNANCE_REQUIRED", message: "These settings can only be changed via Governance" } });
+    }
+
     const settings = await prismaAdmin.restaurantSettings.findFirst();
     if (!settings) {
       await prismaAdmin.restaurantSettings.create({

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getGovernanceRequests, voteGovernanceAction } from "@/lib/governance.functions";
+import { getGovernanceRequests, voteGovernanceAction, GovernanceRequest } from "@/lib/governance.functions";
 import { useIsAdmin } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin/governance")({
@@ -24,7 +24,7 @@ function GovernanceDashboard() {
     mutationFn: ({ id, vote }: { id: string; vote: "APPROVE" | "REJECT" }) =>
       voteGovernanceAction(id, vote),
     onSuccess: (res) => {
-      if (res.executed) {
+      if (res.data.executed) {
         toast.success("Vote submitted and action executed!");
       } else {
         toast.success("Vote submitted successfully.");
@@ -53,9 +53,14 @@ function GovernanceDashboard() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {requests.map((req: any) => {
-            const hasVoted = req.votes?.some((v: any) => v.voter.id === user?.userId);
-            const isRequester = req.requester.id === user?.userId;
+          {requests.map((req: GovernanceRequest) => {
+            const hasVoted = req.votes?.some((v) => v.voter.id === user?.id);
+            const isRequester = req.requester.id === user?.id;
+
+            // Redact raw payload to avoid exposing secrets like API keys
+            let redactedPayload = "Redacted payload for security";
+            if (req.action_type === "SUSPEND_APP") redactedPayload = "Suspension toggled";
+            if (req.action_type === "DELETE_SUPERADMIN") redactedPayload = `Target ID: ${req.target_id}`;
 
             return (
               <Card key={req.id}>
@@ -76,7 +81,7 @@ function GovernanceDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="bg-muted p-3 rounded-md text-sm font-mono">
-                    {JSON.stringify(req.payload, null, 2)}
+                    {req.display_payload ? JSON.stringify(req.display_payload, null, 2) : redactedPayload}
                   </div>
                   
                   <div className="flex items-center justify-between text-sm">
@@ -127,3 +132,4 @@ function GovernanceDashboard() {
     </div>
   );
 }
+

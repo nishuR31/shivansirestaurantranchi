@@ -66,22 +66,28 @@ function SettingsManager() {
             is_suspended: newSuspended
           }
         });
-        toast.success("Governance proposal submitted for suspension change.");
-      } else {
-        data.is_suspended = newSuspended;
-        data.shutdown_code = form["shutdown_code"] ? Number(form["shutdown_code"]) : null;
-        data.shutdown_message = form["shutdown_message"] ? String(form["shutdown_message"]) : null;
+        
+        return { governance: true };
       }
+
+      // If we got here, no suspension change was made, so we just save the normal fields
+      // NOTE: We do not set is_suspended, shutdown_code, or shutdown_message on `data` 
+      // because they are strictly controlled by governance.
 
       return saveOwnerSettings(data);
     },
-    onSuccess: () => {
-      toast.success("Settings saved");
+    onSuccess: (res: any) => {
+      if (res?.governance) {
+        toast.success("Governance proposal submitted for suspension change.");
+      } else {
+        toast.success("Settings saved");
+      }
       void qc.invalidateQueries({ queryKey: ["owner-settings"] });
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },
     onError: (e: any) =>
       toast.error(e?.message ?? e?.toString() ?? "Could not save settings"),
+
   });
 
   const { data: config } = useQuery({
