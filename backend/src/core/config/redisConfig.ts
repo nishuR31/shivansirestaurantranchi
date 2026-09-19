@@ -1,5 +1,6 @@
 import { Redis } from "ioredis";
 import env from "./envConfig";
+import logger from "./loggerConfig";
 
 const redisOptions = {
   lazyConnect: true,
@@ -15,9 +16,9 @@ export async function connectRedisCache(): Promise<Redis | null> {
   if (cache && cache.status !== "ready") {
     try {
       await cache.connect();
-      console.log("[Redis Cache] connected successfully.");
+      logger.info("[Redis Cache] connected successfully.");
     } catch (error) {
-      console.warn("[Redis Cache] Failed to connect.", error);
+      logger.warn({ error }, "[Redis Cache] Failed to connect.");
     }
   }
   return cache;
@@ -27,9 +28,9 @@ export async function connectRedisRateLimit(): Promise<Redis | null> {
   if (rateLimit && rateLimit.status !== "ready") {
     try {
       await rateLimit.connect();
-      console.log("[Redis Rate Limit] connected successfully.");
+      logger.info("[Redis Rate Limit] connected successfully.");
     } catch (error) {
-      console.warn("[Redis Rate Limit] Failed to connect.", error);
+      logger.warn({ error }, "[Redis Rate Limit] Failed to connect.");
     }
   }
   return rateLimit;
@@ -41,7 +42,7 @@ export async function fetchWithCache<T>(key: string, ttlSeconds: number, fetcher
       const cached = await cache.get(key);
       if (cached) return JSON.parse(cached) as T;
     } catch (err) {
-      console.warn(`[Redis Cache] Failed to get ${key}:`, err);
+      logger.warn({ err }, `[Redis Cache] Failed to get ${key}`);
     }
   }
   const data = await fetcher();
@@ -49,7 +50,7 @@ export async function fetchWithCache<T>(key: string, ttlSeconds: number, fetcher
     try {
       await cache.setex(key, ttlSeconds, JSON.stringify(data));
     } catch (err) {
-      console.warn(`[Redis Cache] Failed to set ${key}:`, err);
+      logger.warn({ err }, `[Redis Cache] Failed to set ${key}`);
     }
   }
   return data;

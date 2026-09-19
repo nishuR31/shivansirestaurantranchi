@@ -25,6 +25,8 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+let refreshTokenPromise: Promise<any> | null = null;
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -38,11 +40,16 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        await axios.post(
-          `${API_BASE_URL}/auth/refresh-token`,
-          {},
-          { withCredentials: true },
-        );
+        if (!refreshTokenPromise) {
+          refreshTokenPromise = axios.post(
+            `${API_BASE_URL}/auth/refresh-token`,
+            {},
+            { withCredentials: true },
+          ).finally(() => {
+            refreshTokenPromise = null;
+          });
+        }
+        await refreshTokenPromise;
         return apiClient(originalRequest);
       } catch (refreshError) {
         return Promise.reject(refreshError);
@@ -57,6 +64,22 @@ export interface ApiRequestOptions {
   headers?: Record<string, string>;
   body?: string;
   signal?: AbortSignal;
+}
+
+export class ApiError extends Error {
+  code: string;
+  status?: number;
+  requestId?: string;
+  details?: unknown;
+
+  constructor(message: string, code: string, status?: number, requestId?: string, details?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+    this.requestId = requestId;
+    this.details = details;
+  }
 }
 
 export async function fetchAPI<T>(
@@ -79,24 +102,28 @@ export async function fetchAPI<T>(
     });
     return response.data;
   } catch (error: any) {
-    // Safely extract a string message regardless of backend response shape:
-    // { error: "msg" } | { message: "msg" } | { error: { message: "msg" } }
-    const raw = error.response?.data?.error ?? error.response?.data?.message ?? null;
-    const msg: string | null =
-      raw == null
-        ? null
-        : typeof raw === "string"
-          ? raw
-          : typeof raw?.message === "string"
-            ? raw.message
-            : null;
-    if (msg) throw new Error(msg);
-    if (error.code === "ERR_NETWORK") {
-      throw new Error(
-        "Unable to connect to the server. Please check your internet connection.",
-      );
+    if (axios.isCancel(error) || error.name === "AbortError" || error.name === "CanceledError") {
+      throw new ApiError("Request canceled", "CANCELED");
     }
-    throw new Error(error?.message ?? "Something went wrong. Please try again later.");
+
+    const data = error.response?.data;
+    const status = error.response?.status;
+    const errorObj = data?.error || data;
+
+    const code = errorObj?.code || data?.code || "UNKNOWN_ERROR";
+    let message = errorObj?.message || data?.message || typeof errorObj === "string" ? errorObj : null;
+    const requestId = errorObj?.requestId || data?.requestId || error.response?.headers?.["x-request-id"];
+    const details = errorObj?.details || data?.details;
+
+    if (!message) {
+      if (status === 401) message = "Unauthorized access";
+      else if (status === 403) message = "Forbidden access";
+      else if (status === 404) message = "Resource not found";
+      else if (error.code === "ERR_NETWORK") message = "Unable to connect to the server. Please check your internet connection.";
+      else message = error.message || "Something went wrong. Please try again later.";
+    }
+
+    throw new ApiError(message as string, code, status, requestId, details);
   }
 }
 

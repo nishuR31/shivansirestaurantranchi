@@ -10,6 +10,41 @@ import {
 } from "../config/socketConfig";
 import logger from "../config/loggerConfig";
 
+function toPublicOrderDTO(order: any) {
+  if (!order) return order;
+  return {
+    id: order.id,
+    order_number: order.order_number,
+    status: order.status,
+    payment_status: order.payment_status,
+    payment_method: order.payment_method,
+    table_number: order.table_number,
+    created_at: order.created_at,
+    updated_at: order.updated_at,
+    order_items: order.order_items?.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      weight_label: item.weight_label,
+      line_total: item.line_total,
+      instructions: item.instructions
+    })),
+    total: order.total
+  };
+}
+
+function toPublicSettingsDTO(settings: any) {
+  if (!settings) return settings;
+  // Expose only safe settings
+  return {
+    restaurant_name: settings.restaurant_name,
+    is_accepting_orders: settings.is_accepting_orders,
+    upi_id: settings.upi_id,
+    currency: settings.currency,
+    tax_percent: settings.tax_percent
+  };
+}
+
 // ─── Order Events ────────────────────────────────────────────────────────────
 
 export function emitOrderCreated(order: any) {
@@ -38,7 +73,7 @@ export function emitOrderUpdated(order: any) {
 
     // Notify customer tracking the specific order
     publicNs.to(ROOMS.order(order.id)).emit(EVENTS.ORDER_UPDATED, {
-      order,
+      order: toPublicOrderDTO(order),
       timestamp: Date.now(),
     });
 
@@ -55,15 +90,20 @@ export function emitOrderStatusChanged(order: any, previousStatus: string) {
     const adminNs = getAdminNamespace();
     const publicNs = getPublicNamespace();
 
-    const payload = {
+    const adminPayload = {
       order,
       previousStatus,
       newStatus: order.status,
       timestamp: Date.now(),
     };
 
-    adminNs.to(ROOMS.ORDERS).emit(EVENTS.ORDER_STATUS_CHANGED, payload);
-    publicNs.to(ROOMS.order(order.id)).emit(EVENTS.ORDER_STATUS_CHANGED, payload);
+    const publicPayload = {
+      ...adminPayload,
+      order: toPublicOrderDTO(order)
+    };
+
+    adminNs.to(ROOMS.ORDERS).emit(EVENTS.ORDER_STATUS_CHANGED, adminPayload);
+    publicNs.to(ROOMS.order(order.id)).emit(EVENTS.ORDER_STATUS_CHANGED, publicPayload);
 
     logger.info(
       `[Socket.IO] Emitted order:status_changed → ${order.order_number || order.id}: ${previousStatus} → ${order.status}`,
@@ -78,10 +118,11 @@ export function emitOrderPaymentUpdated(order: any) {
     const adminNs = getAdminNamespace();
     const publicNs = getPublicNamespace();
 
-    const payload = { order, timestamp: Date.now() };
+    const adminPayload = { order, timestamp: Date.now() };
+    const publicPayload = { order: toPublicOrderDTO(order), timestamp: Date.now() };
 
-    adminNs.to(ROOMS.ORDERS).emit(EVENTS.ORDER_PAYMENT_UPDATED, payload);
-    publicNs.to(ROOMS.order(order.id)).emit(EVENTS.ORDER_PAYMENT_UPDATED, payload);
+    adminNs.to(ROOMS.ORDERS).emit(EVENTS.ORDER_PAYMENT_UPDATED, adminPayload);
+    publicNs.to(ROOMS.order(order.id)).emit(EVENTS.ORDER_PAYMENT_UPDATED, publicPayload);
 
     logger.info(
       `[Socket.IO] Emitted order:payment_updated → ${order.order_number || order.id}`,
@@ -163,10 +204,11 @@ export function emitSettingsUpdated(settings: any) {
     const adminNs = getAdminNamespace();
     const publicNs = getPublicNamespace();
 
-    const payload = { settings, timestamp: Date.now() };
+    const adminPayload = { settings, timestamp: Date.now() };
+    const publicPayload = { settings: toPublicSettingsDTO(settings), timestamp: Date.now() };
 
-    adminNs.emit(EVENTS.SETTINGS_UPDATED, payload);
-    publicNs.emit(EVENTS.SETTINGS_UPDATED, payload);
+    adminNs.emit(EVENTS.SETTINGS_UPDATED, adminPayload);
+    publicNs.emit(EVENTS.SETTINGS_UPDATED, publicPayload);
   } catch (err: any) {
     logger.error(`[Socket.IO] emitSettingsUpdated failed: ${err.message}`);
   }

@@ -11,27 +11,41 @@ export default async function systemRoutes(app: FastifyInstance) {
     { preHandler: [authenticate as any, requireSuperAdmin as any] },
     async (req: FastifyRequest, res: FastifyReply) => {
       try {
-        const logs = await prismaAudit.auditLog.findMany({
-          orderBy: { createdAt: "desc" },
-          take: 100,
-        });
-        return res.send(logs);
+        const { page = "1", limit = "20" } = req.query as { page?: string; limit?: string };
+        const take = Math.min(parseInt(limit) || 20, 100);
+        const skip = (Math.max(parseInt(page) || 1, 1) - 1) * take;
+
+        const [logs, total] = await Promise.all([
+           prismaAudit.auditLog.findMany({
+             orderBy: { createdAt: "desc" },
+             take,
+             skip,
+           }),
+           prismaAudit.auditLog.count(),
+        ]);
+        return res.send({ logs, total, page: skip / take + 1, limit: take });
       } catch (error: any) {
         return res.status(500).send({ error: error.message });
       }
     }
   );
 
-  app.post(
-    "/crud/:table",
-    { preHandler: [authenticate as any, requireAdmin as any] },
-    systemController.saveRow,
-  );
-  app.delete(
-    "/crud/:table/:id",
-    {
-      preHandler: [authenticate as any, requireAdmin as any],
-    },
-    systemController.deleteRow
-  );
+  const resources = [
+    "products", "categories", "offers", "discounts", 
+    "loyalty_rules", "inventory_items", "restaurant_tables", 
+    "restaurant_settings", "app_config", "customers", "orders", "notifications", "reviews"
+  ];
+
+  for (const resource of resources) {
+    app.post(
+      `/crud/${resource}`,
+      { preHandler: [authenticate as any, requireAdmin as any] },
+      (req, res) => systemController.saveRow(req, res, resource)
+    );
+    app.delete(
+      `/crud/${resource}/:id`,
+      { preHandler: [authenticate as any, requireAdmin as any] },
+      (req, res) => systemController.deleteRow(req, res, resource)
+    );
+  }
 }

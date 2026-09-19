@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import { fetchAPI } from "@/lib/db";
 import { useIsAdmin } from "@/lib/auth";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/audit")({
   component: AuditLogsPage,
@@ -10,12 +11,18 @@ export const Route = createFileRoute("/admin/audit")({
 
 function AuditLogsPage() {
   const { isSuperAdmin } = useIsAdmin();
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ["audit-logs"],
-    queryFn: () => fetchAPI<any[]>("/system/audit-logs"),
+  const { data, isLoading } = useQuery({
+    queryKey: ["audit-logs", page],
+    queryFn: () => fetchAPI(`/audit-logs?page=${page}`),
     enabled: isSuperAdmin,
   });
+
+  const logs = data?.logs || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / limit);
 
   if (!isSuperAdmin) {
     return (
@@ -83,6 +90,27 @@ function AuditLogsPage() {
               )}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-md bg-secondary px-3 py-1 text-sm font-medium disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-md bg-secondary px-3 py-1 text-sm font-medium disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

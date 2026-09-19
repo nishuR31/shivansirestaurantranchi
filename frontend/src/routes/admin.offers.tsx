@@ -19,8 +19,6 @@ function OffersManager() {
   const { data: discounts = [], isLoading: dLoad } = useQuery(discountsQuery);
   const { data: loyalty = [], isLoading: lLoad } = useQuery(loyaltyQuery);
 
-  if (oLoad || dLoad || lLoad) return <PageLoader />;
-
   const saveOffer = useSaveRow("offers", "offers", "Offer saved");
   const deleteOffer = useDeleteRow("offers", "offers");
   const saveDiscount = useSaveRow("discounts", "discounts", "Coupon saved");
@@ -49,6 +47,9 @@ function OffersManager() {
     reward_points: 50,
     expiry_days: 90,
   });
+
+  if (oLoad || dLoad || lLoad) return <PageLoader />;
+
 
   return (
     <div className="space-y-8">

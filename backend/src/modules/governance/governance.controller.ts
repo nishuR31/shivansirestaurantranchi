@@ -1,12 +1,20 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
+import { prismaApp, prismaAdmin, prismaAudit } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { z } from "zod";
+import { sendError, sendSuccess } from "../../core/utils/common/response";
+import { STATUS_CODES } from "../../core/utils/common/constants";
 
 export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const user = req.user as any;
-    if (user.role !== "SUPERADMIN") return res.status(403).send({ error: "Only superadmins can access governance" });
+    if (user.role !== "SUPERADMIN") return sendError(res, "Only superadmins can access governance", STATUS_CODES.FORBIDDEN);
+
+    const now = new Date();
+    await prismaAdmin.adminActionRequest.updateMany({
+      where: { status: "PENDING", expires_at: { lt: now } },
+      data: { status: "EXPIRED" }
+    });
 
     const requests = await prismaAdmin.adminActionRequest.findMany({
       orderBy: { created_at: "desc" },
@@ -20,10 +28,10 @@ export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
 
-    return res.send({ success: true, requests });
+    return sendSuccess(res, "Requests fetched", STATUS_CODES.OK, { requests });
   } catch (error: any) {
     logger.error(`Error in getRequests: ${error.message}`);
-    return res.status(500).send({ error: "Internal server error" });
+    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -36,13 +44,15 @@ const requestSchema = z.object({
 export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const user = req.user as any;
-    if (user.role !== "SUPERADMIN") return res.status(403).send({ error: "Only superadmins can propose governance actions" });
+    if (user.role !== "SUPERADMIN") return sendError(res, "Only superadmins can propose governance actions", STATUS_CODES.FORBIDDEN);
 
     const parsed = requestSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).send({ error: "Invalid request data", details: parsed.error.format() });
+    if (!parsed.success) return sendError(res, "Invalid request data", STATUS_CODES.BAD_REQUEST, { details: parsed.error.format() });
 
     const superadmins = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
-    const required_approvals = superadmins > 1 ? superadmins - Math.floor(superadmins / 2) : 0; // Requires ALL other superadmins to approve
+    
+    // Policy: every other SUPERADMIN must approve
+    const required_approvals = Math.max(superadmins - 1, 0);
 
     const expires_at = new Date();
     expires_at.setHours(expires_at.getHours() + 48);
@@ -59,85 +69,176 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
 
+    await prismaAudit.auditLog.create({
+      data: {
+        adminId: user.id,
+        adminEmail: user.email || "unknown",
+        action: "PROPOSE_GOVERNANCE",
+        table: "adminActionRequest",
+        recordId: newRequest.id,
+      }
+    });
+
     // Send notifications to all other superadmins here...
 
-    return res.send({ success: true, request: newRequest });
+    return sendSuccess(res, "Action requested", STATUS_CODES.OK, { request: newRequest });
   } catch (error: any) {
     logger.error(`Error in requestAction: ${error.message}`);
-    return res.status(500).send({ error: "Internal server error" });
+    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };
 
 export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const user = req.user as any;
-    if (user.role !== "SUPERADMIN") return res.status(403).send({ error: "Only superadmins can vote" });
+    if (user.role !== "SUPERADMIN") return sendError(res, "Only superadmins can vote", STATUS_CODES.FORBIDDEN);
 
     const { id } = req.params as any;
     const { vote } = req.body as any; // "APPROVE" or "REJECT"
 
     if (vote !== "APPROVE" && vote !== "REJECT") {
-      return res.status(400).send({ error: "Invalid vote" });
+      return sendError(res, "Invalid vote", STATUS_CODES.BAD_REQUEST);
     }
 
-    const actionRequest = await prismaAdmin.adminActionRequest.findUnique({
-      where: { id }
-    });
-
-    if (!actionRequest) return res.status(404).send({ error: "Request not found" });
-    if (actionRequest.status !== "PENDING") return res.status(400).send({ error: "Request is no longer pending" });
-    if (actionRequest.requester_id === user.id) return res.status(400).send({ error: "You cannot vote on your own request" });
-    if (actionRequest.target_id === user.id) return res.status(400).send({ error: "You cannot vote on a request targeting yourself" });
-
-    // Record vote
-    const existingVote = await prismaAdmin.adminActionVote.findFirst({
-      where: { request_id: id, voter_id: user.id }
-    });
-
-    if (existingVote) {
-      await prismaAdmin.adminActionVote.update({
-        where: { id: existingVote.id },
-        data: { vote }
-      });
-    } else {
-      await prismaAdmin.adminActionVote.create({
-        data: { request_id: id, voter_id: user.id, vote }
-      });
-    }
-
-    // Check approvals
-    const approvalsCount = await prismaAdmin.adminActionVote.count({
-      where: { request_id: id, vote: "APPROVE" }
-    });
-
-    if (approvalsCount >= actionRequest.required_approvals) {
-      await prismaAdmin.adminActionRequest.update({
-        where: { id },
-        data: { status: "EXECUTED", approvals: approvalsCount }
+    // Wrap voting and execution in a transaction to prevent race conditions
+    const result = await prismaAdmin.$transaction(async (tx) => {
+      const actionRequest = await tx.adminActionRequest.findUnique({
+        where: { id }
       });
 
-      // Execution Logic
-      if (actionRequest.action_type === "SUSPEND_APP") {
-        const payload = actionRequest.payload as any;
-        await prismaAdmin.restaurantSettings.updateMany({
-          data: {
-            is_suspended: true,
-            shutdown_message: payload?.message ?? "Restaurant suspended",
-            shutdown_code: 402
+      if (!actionRequest) throw new Error("Request not found");
+      if (actionRequest.status !== "PENDING") throw new Error("Request is no longer pending");
+      if (actionRequest.expires_at < new Date()) {
+         // Optionally update status to EXPIRED
+         await tx.adminActionRequest.update({ where: { id }, data: { status: "EXPIRED" } });
+         throw new Error("GOVERNANCE_REQUEST_EXPIRED");
+      }
+      if (actionRequest.requester_id === user.id) throw new Error("You cannot vote on your own request");
+      if (actionRequest.target_id === user.id) throw new Error("You cannot vote on a request targeting yourself");
+
+      // Record vote (upsert handles existing votes safely using the unique constraint)
+      await tx.adminActionVote.upsert({
+        where: {
+          request_id_voter_id: {
+            request_id: id,
+            voter_id: user.id
           }
+        },
+        update: { vote },
+        create: { request_id: id, voter_id: user.id, vote }
+      });
+
+      // Check approvals
+      const approvalsCount = await tx.adminActionVote.count({
+        where: { request_id: id, vote: "APPROVE" }
+      });
+      
+      const rejectionsCount = await tx.adminActionVote.count({
+        where: { request_id: id, vote: "REJECT" }
+      });
+
+      // Policy: 1 rejection kills the proposal
+      if (rejectionsCount > 0) {
+        await tx.adminActionRequest.update({
+          where: { id },
+          data: { status: "REJECTED", approvals: approvalsCount }
         });
-      } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
-        if (actionRequest.target_id) {
-          await prismaAdmin.admin.delete({ where: { id: actionRequest.target_id } });
-        }
+        return { executed: false, rejected: true };
       }
 
-      return res.send({ success: true, executed: true });
+      if (approvalsCount >= actionRequest.required_approvals) {
+        await tx.adminActionRequest.update({
+          where: { id },
+          data: { status: "EXECUTED", approvals: approvalsCount }
+        });
+
+        // Execution Logic
+        if (actionRequest.action_type === "SUSPEND_APP") {
+          const payload = actionRequest.payload as any;
+          await tx.restaurantSettings.updateMany({
+            data: {
+              is_suspended: true,
+              shutdown_message: payload?.message ?? "Restaurant suspended",
+              shutdown_code: 402
+            }
+          });
+        } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
+          if (actionRequest.target_id) {
+            const superadminCount = await tx.admin.count({ where: { role: "SUPERADMIN" } });
+            if (superadminCount <= 1) {
+              throw new Error("Cannot delete the last SUPERADMIN");
+            }
+            const target = await tx.admin.findUnique({ where: { id: actionRequest.target_id } });
+            if (!target || target.role !== "SUPERADMIN") {
+               throw new Error("Target is not a valid SUPERADMIN");
+            }
+            await tx.admin.delete({ where: { id: actionRequest.target_id } });
+          }
+        } else if (actionRequest.action_type === "MODIFY_API_KEYS") {
+           // Provide basic handling for modifying API keys
+           const payload = actionRequest.payload as any;
+           const config = await tx.appConfig.findFirst();
+           if (config) {
+             await tx.appConfig.update({
+               where: { id: config.id },
+               data: {
+                 whatsapp_token: payload?.whatsapp_token ?? config.whatsapp_token,
+                 whatsapp_phone_number_id: payload?.whatsapp_phone_number_id ?? config.whatsapp_phone_number_id
+               }
+             });
+           }
+        }
+        return { executed: true, rejected: false, action_type: actionRequest.action_type };
+      }
+
+      return { executed: false, rejected: false, action_type: actionRequest.action_type };
+    });
+
+    await prismaAudit.auditLog.create({
+      data: {
+        adminId: user.id,
+        adminEmail: user.email || "unknown",
+        action: `VOTE_GOVERNANCE_${vote}`,
+        table: "adminActionRequest",
+        recordId: id,
+      }
+    });
+
+    if (result.executed) {
+      await prismaAudit.auditLog.create({
+        data: {
+          adminId: user.id,
+          adminEmail: user.email || "unknown",
+          action: `EXECUTE_GOVERNANCE_${result.action_type}`,
+          table: "adminActionRequest",
+          recordId: id,
+        }
+      });
+    } else if (result.rejected) {
+      await prismaAudit.auditLog.create({
+        data: {
+          adminId: user.id,
+          adminEmail: user.email || "unknown",
+          action: "REJECT_GOVERNANCE",
+          table: "adminActionRequest",
+          recordId: id,
+        }
+      });
     }
 
-    return res.send({ success: true, executed: false });
+    return sendSuccess(res, "Vote recorded", STATUS_CODES.OK, { executed: result.executed, rejected: result.rejected });
   } catch (error: any) {
     logger.error(`Error in submitVote: ${error.message}`);
-    return res.status(500).send({ error: "Internal server error" });
+    // If we threw a specific string from within transaction, pass it
+    if (error.message === "GOVERNANCE_REQUEST_EXPIRED" || 
+        error.message === "Request not found" ||
+        error.message === "Request is no longer pending" ||
+        error.message === "You cannot vote on your own request" ||
+        error.message === "You cannot vote on a request targeting yourself" ||
+        error.message === "Cannot delete the last SUPERADMIN" ||
+        error.message === "Target is not a valid SUPERADMIN") {
+        return sendError(res, error.message, STATUS_CODES.BAD_REQUEST);
+    }
+    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };

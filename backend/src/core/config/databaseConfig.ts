@@ -1,5 +1,6 @@
 import { PrismaClient as PrismaAuditClient } from "../../generated/prismaAudit";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { PrismaClient as PrismaAdminClient } from "../../generated/prismaAdmin";
 import { PrismaClient as PrismaAppClient } from "../../generated/prismaApp";
 import env from "./envConfig";
@@ -10,31 +11,31 @@ const connectionStringAdmin = env.ADMIN_DATABASE_URL;
 const connectionStringApp = env.APP_DATABASE_URL;
 const connectionStringAudit = env.AUDIT_DATABASE_URL;
 
-const adapterAdmin = new PrismaPg({
+const poolAdmin = new Pool({
   connectionString: connectionStringAdmin,
   max: 10,
-  min: 2,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 30_000,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
 });
+const adapterAdmin = new PrismaPg(poolAdmin);
 const basePrismaAdmin = new PrismaAdminClient({ adapter: adapterAdmin });
 
-const adapterApp = new PrismaPg({
+const poolApp = new Pool({
   connectionString: connectionStringApp,
   max: 20,
-  min: 2,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 30_000,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
 });
+const adapterApp = new PrismaPg(poolApp);
 const basePrismaApp = new PrismaAppClient({ adapter: adapterApp });
 
-const adapterAudit = new PrismaPg({
+const poolAudit = new Pool({
   connectionString: connectionStringAudit,
   max: 5,
-  min: 1,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 30_000,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
 });
+const adapterAudit = new PrismaPg(poolAudit);
 const basePrismaAudit = new PrismaAuditClient({ adapter: adapterAudit });
 export const prismaAudit = basePrismaAudit;
 

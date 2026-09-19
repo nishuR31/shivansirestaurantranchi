@@ -84,6 +84,22 @@ const logger = pino({
 
   serializers: {
     err: pino.stdSerializers.err,
+    req: pino.stdSerializers.req,
+    res: pino.stdSerializers.res,
+  },
+
+  redact: {
+    paths: [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "req.headers['x-api-key']",
+      "body.password",
+      "body.token",
+      "body.refreshToken",
+      "details.password",
+      "err.config.headers.Authorization"
+    ],
+    censor: "[REDACTED]"
   },
 
   formatters: {

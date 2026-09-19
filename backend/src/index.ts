@@ -27,7 +27,10 @@ const startServer = async () => {
 };
 
 startServer();
+let isShuttingDown = false;
 async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
   logger.info(`\n Received ${signal}. Shutting down gracefully…`);
 
   // Close Socket.IO first (gracefully disconnect all clients)
@@ -41,9 +44,17 @@ async function gracefulShutdown(signal: string) {
     logger.info("HTTP server closed.");
 
     try {
-      await Promise.all([cache.disconnect(), rateLimit.disconnect()]);
+      await Promise.all([
+        cache.disconnect(), 
+        rateLimit.disconnect(),
+        import("./core/config/databaseConfig").then(db => Promise.all([
+          db.prismaApp.$disconnect(),
+          db.prismaAdmin.$disconnect(),
+          db.prismaAudit.$disconnect()
+        ]))
+      ]);
     } catch (err) {
-      logger.error({ error: err }, "Error dismounting RAM");
+      logger.error({ error: err }, "Error disconnecting databases");
     }
 
     logger.info("All connections closed. Goodbye!");

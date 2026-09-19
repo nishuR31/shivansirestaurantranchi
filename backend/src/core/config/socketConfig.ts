@@ -3,6 +3,7 @@ import { Server, Namespace, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import { JWT_ACCESS_SECRET, WEB_ORIGIN, NODE_ENV } from "./envConfig";
 import logger from "./loggerConfig";
+import { prismaApp } from "./databaseConfig";
 
 let io: Server | null = null;
 
@@ -95,7 +96,7 @@ export function initializeSocketIO(server: FastifyInstance): Server {
 
   io = new Server(server.server, {
     cors: {
-      origin: NODE_ENV === "production" ? WEB_ORIGIN : true,
+      origin: process.env.WEB_ORIGINS ? process.env.WEB_ORIGINS.split(",") : (NODE_ENV === "production" ? false : true),
       credentials: true,
     },
     pingInterval: 15000,
@@ -139,26 +140,8 @@ export function initializeSocketIO(server: FastifyInstance): Server {
     });
 
     // Handle incoming duplex API requests natively through socket
-    socket.on("api:request", async (payload: { url: string; method: string; data?: any }, callback: (res: any) => void) => {
-      try {
-        const response = await server.inject({
-          method: payload.method as any,
-          url: "/api/v1" + payload.url,
-          payload: payload.data,
-          headers: socket.handshake.headers, // Forward cookies/auth
-        });
-        
-        let data = response.payload;
-        try { data = JSON.parse(data); } catch (e) {}
-
-        if (response.statusCode >= 400) {
-          callback({ error: data });
-        } else {
-          callback({ data });
-        }
-      } catch (err: any) {
-        callback({ error: err.message || "Internal Server Error" });
-      }
+    socket.on("api:request", () => {
+      logger.warn(`[Socket.IO] api:request is deprecated and disabled for admin socket ${socket.id}`);
     });
   });
 
@@ -169,17 +152,30 @@ export function initializeSocketIO(server: FastifyInstance): Server {
     logger.info(`[Socket.IO] Public client connected: ${socket.id}`);
 
     // Clients join specific order rooms for tracking
-    socket.on("track:order", (data: { orderId: string; token: string }) => {
+    socket.on("track:order", async (data: { orderId: string; token: string }) => {
       if (data.orderId && data.token) {
-        const roomName = ROOMS.order(data.orderId);
-        socket.join(roomName);
-        socket.emit("tracking:joined", {
-          orderId: data.orderId,
-          room: roomName,
-        });
-        logger.info(
-          `[Socket.IO] Client ${socket.id} tracking order ${data.orderId}`,
-        );
+        try {
+          const order = await prismaApp.order.findFirst({
+            where: { id: data.orderId, tracking_token: data.token },
+          });
+
+          if (!order) {
+            socket.emit("tracking:error", { message: "Invalid tracking token or order" });
+            return;
+          }
+
+          const roomName = ROOMS.order(data.orderId);
+          socket.join(roomName);
+          socket.emit("tracking:joined", {
+            orderId: data.orderId,
+            room: roomName,
+          });
+          logger.info(
+            `[Socket.IO] Client ${socket.id} tracking order ${data.orderId}`,
+          );
+        } catch (err) {
+          socket.emit("tracking:error", { message: "Failed to verify tracking token" });
+        }
       }
     });
 
@@ -201,26 +197,8 @@ export function initializeSocketIO(server: FastifyInstance): Server {
     });
 
     // Handle incoming duplex API requests natively through socket
-    socket.on("api:request", async (payload: { url: string; method: string; data?: any }, callback: (res: any) => void) => {
-      try {
-        const response = await server.inject({
-          method: payload.method as any,
-          url: "/api/v1" + payload.url,
-          payload: payload.data,
-          headers: socket.handshake.headers, // Forward cookies/auth
-        });
-        
-        let data = response.payload;
-        try { data = JSON.parse(data); } catch (e) {}
-
-        if (response.statusCode >= 400) {
-          callback({ error: data });
-        } else {
-          callback({ data });
-        }
-      } catch (err: any) {
-        callback({ error: err.message || "Internal Server Error" });
-      }
+    socket.on("api:request", () => {
+      logger.warn(`[Socket.IO] api:request is deprecated and disabled for public socket ${socket.id}`);
     });
   });
 

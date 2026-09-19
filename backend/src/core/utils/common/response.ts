@@ -21,11 +21,27 @@ export function sendError(
   res: FastifyReply,
   message: String = "Error occured",
   statusCode: number = 500,
-  errors?: any,
+  details?: any,
 ) {
-  return res
-    .code(statusCode)
-    .send({ success: false, message, ...(errors && { errors }) });
+  let code = "INTERNAL_SERVER_ERROR";
+  if (statusCode === 400) code = "BAD_REQUEST";
+  else if (statusCode === 401) code = "UNAUTHORIZED";
+  else if (statusCode === 403) code = "FORBIDDEN";
+  else if (statusCode === 404) code = "NOT_FOUND";
+  else if (statusCode === 405) code = "METHOD_NOT_ALLOWED";
+  else if (statusCode === 409) code = "CONFLICT";
+  else if (statusCode === 422) code = "UNPROCESSABLE_ENTITY";
+  else if (statusCode === 429) code = "TOO_MANY_REQUESTS";
+
+  return res.code(statusCode).send({
+    success: false,
+    error: {
+      code,
+      message,
+      requestId: (res.request as any)?.id,
+      details,
+    },
+  });
 }
 
 export function sendNotFoundError(

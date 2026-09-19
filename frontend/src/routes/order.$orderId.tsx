@@ -36,6 +36,7 @@ export const Route = createFileRoute("/order/$orderId")({
 function OrderTracking() {
   const { orderId } = Route.useParams();
   const { t } = Route.useSearch();
+  
   if (!orderId || !t) {
     return (
       <main className="grid min-h-[60vh] place-items-center px-4">
@@ -54,35 +55,49 @@ function OrderTracking() {
     );
   }
 
+  return <OrderTrackingContent orderId={orderId} token={t} />;
+}
+
+function OrderTrackingContent({ orderId, token }: { orderId: string; token: string }) {
   const query = useSuspenseQuery({
-    queryKey: ["public-order", orderId, t],
-    queryFn: ({ signal }) => getPublicOrder({ id: orderId, token: t }, { signal }),
+    queryKey: ["public-order", orderId, token],
+    queryFn: ({ signal }) => getPublicOrder({ id: orderId, token }, { signal }),
   });
 
   // Subscribe to real-time updates via Socket.IO
   const queryClient = useQueryClient();
   useEffect(() => {
     const socket = getPublicSocket();
-    
-    // Join the room for this specific order
-    socket.emit("track:order", { orderId, token: t });
-    
-    const onOrderUpdate = () => {
-      void queryClient.invalidateQueries({ queryKey: ["public-order", orderId, t] });
+    const onConnect = () => {
+      // Re-join the room upon connection/reconnection
+      socket.emit("track:order", { orderId, token });
+      // Authoritative HTTP refetch on reconnect
+      void queryClient.invalidateQueries({ queryKey: ["public-order", orderId, token] });
     };
 
+    const onOrderUpdate = () => {
+      void queryClient.invalidateQueries({ queryKey: ["public-order", orderId, token] });
+    };
+
+    socket.on("connect", onConnect);
     socket.on("order:updated", onOrderUpdate);
     socket.on("order:status_changed", onOrderUpdate);
     socket.on("order:payment_updated", onOrderUpdate);
     
+    // Initial emit if already connected
+    if (socket.connected) {
+      onConnect();
+    }
+    
     return () => {
       // Leave the room
       socket.emit("untrack:order", { orderId });
+      socket.off("connect", onConnect);
       socket.off("order:updated", onOrderUpdate);
       socket.off("order:status_changed", onOrderUpdate);
       socket.off("order:payment_updated", onOrderUpdate);
     };
-  }, [orderId, t, queryClient]);
+  }, [orderId, token, queryClient]);
 
   const payload = query.data;
   if (!payload) {

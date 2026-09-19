@@ -22,6 +22,7 @@ import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminGovernanceRouteImport } from './routes/admin.governance'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
@@ -100,6 +101,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/governance': typeof AdminGovernanceRoute
   '/admin/inventory': typeof AdminInventoryRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/governance': typeof AdminGovernanceRoute
   '/admin/inventory': typeof AdminInventoryRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/governance': typeof AdminGovernanceRoute
   '/admin/inventory': typeof AdminInventoryRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/settings'
     | '/signup'
+    | '/admin/audit'
     | '/admin/customers'
     | '/admin/governance'
     | '/admin/inventory'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/settings'
     | '/signup'
+    | '/admin/audit'
     | '/admin/customers'
     | '/admin/governance'
     | '/admin/inventory'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/scanner'
     | '/settings'
     | '/signup'
+    | '/admin/audit'
     | '/admin/customers'
     | '/admin/governance'
     | '/admin/inventory'
@@ -435,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers': {
       id: '/admin/customers'
       path: '/customers'
@@ -523,6 +542,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminGovernanceRoute: typeof AdminGovernanceRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
@@ -537,6 +557,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminGovernanceRoute: AdminGovernanceRoute,
   AdminInventoryRoute: AdminInventoryRoute,

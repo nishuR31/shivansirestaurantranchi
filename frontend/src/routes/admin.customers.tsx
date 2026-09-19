@@ -18,8 +18,6 @@ function CustomersManager() {
   const { data: customers = [], isLoading: loadingCust } = useQuery(customersQuery);
   const { data: reviews = [], isLoading: loadingRev } = useQuery(reviewsQuery);
 
-  if (loadingCust || loadingRev) return <PageLoader />;
-
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -65,6 +63,8 @@ function CustomersManager() {
   };
   const [busy, setBusy] = useState<string | null>(null);
   const qc = useQueryClient();
+
+  if (loadingCust || loadingRev) return <PageLoader />;
 
   async function togglePublish(review: any) {
     setBusy(review.id);

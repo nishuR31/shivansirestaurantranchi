@@ -1,5 +1,9 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
+import {
+  prismaApp,
+  prismaAdmin,
+  prismaAudit,
+} from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { cache } from "../../core/config/redisConfig";
 import { 
@@ -8,6 +12,7 @@ import {
   emitSettingsUpdated, 
   emitTableStatusChanged 
 } from "../../core/providers/socketEmitter";
+import { crudSchemas } from "./system.schemas";
 
 // Map frontend table names to Prisma model names
 const modelMap: Record<string, any> = {
@@ -37,10 +42,9 @@ const cacheKeyMap: Record<string, string> = {
   restaurant_settings: "data:settings",
 };
 
-export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
+export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: string) => {
   try {
-    const { table } = req.params as any;
-    const data = req.body as any;
+    let data = req.body as any;
 
     const modelName = modelMap[table];
     if (!modelName) {
@@ -57,19 +61,36 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
       }
     }
 
-    // Backend validation for percent limits
-    if (data.discount_percent !== undefined) {
-      const p = Number(data.discount_percent);
-      if (p < 0 || p > 100) return res.status(400).send({ error: "Discount percent must be between 0 and 100" });
-    }
-    if (table === "discounts" && data.type === "percent" && data.value !== undefined) {
-      const v = Number(data.value);
-      if (v < 0 || v > 100) return res.status(400).send({ error: "Percentage value must be between 0 and 100" });
-    }
+    // Validation with Zod Schema if defined
+    if (crudSchemas[table]) {
+      const parsedData = crudSchemas[table].safeParse(data);
+      if (!parsedData.success) {
+        return res.status(400).send({
+          success: false,
+          error: {
+            code: "VALIDATION_FAILED",
+            message: "Validation failed",
+            details: parsedData.error.issues,
+          }
+        });
+      }
+      // Re-assign validated data
+      data = parsedData.data;
+    } else {
+      // Fallback Backend validation for percent limits
+      if (data.discount_percent !== undefined) {
+        const p = Number(data.discount_percent);
+        if (p < 0 || p > 100) return res.status(400).send({ error: "Discount percent must be between 0 and 100" });
+      }
+      if (table === "discounts" && data.type === "percent" && data.value !== undefined) {
+        const v = Number(data.value);
+        if (v < 0 || v > 100) return res.status(400).send({ error: "Percentage value must be between 0 and 100" });
+      }
 
-    if (table === "discounts" || table === "offers") {
-      if (data.category_ids === undefined) data.category_ids = [];
-      if (data.product_ids === undefined) data.product_ids = [];
+      if (table === "discounts" || table === "offers") {
+        if (data.category_ids === undefined) data.category_ids = [];
+        if (data.product_ids === undefined) data.product_ids = [];
+      }
     }
 
     const user = req.user as any;
@@ -79,8 +100,11 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
       if (currentSettings && currentSettings.is_suspended !== data.is_suspended) {
          if (user?.role === "SUPERADMIN") {
             return res.status(403).send({ 
-              error: "GOVERNANCE_REQUIRED", 
-              message: "Modifying suspension status requires a Governance Proposal. Please submit it through the Governance tab."
+              success: false,
+              error: {
+                code: "GOVERNANCE_REQUIRED", 
+                message: "Modifying suspension status requires a Governance Proposal. Please submit it through the Governance tab."
+              }
             });
          }
       }
@@ -108,6 +132,18 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
         emitTableStatusChanged(updated);
       }
 
+      if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN") && ["restaurant_settings", "app_config"].includes(table)) {
+        await prismaAudit.auditLog.create({
+          data: {
+            adminId: user.id,
+            adminEmail: user.email || "unknown",
+            action: "UPDATE",
+            table: table,
+            recordId: updated.id,
+          }
+        }).catch(err => logger.error(`Failed to write audit log: ${err.message}`));
+      }
+
       return res.send(updated);
     } else {
       // Insert
@@ -124,21 +160,42 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply) => {
         emitTableStatusChanged(inserted);
       }
 
+      if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN") && ["restaurant_settings", "app_config"].includes(table)) {
+        await prismaAudit.auditLog.create({
+          data: {
+            adminId: user.id,
+            adminEmail: user.email || "unknown",
+            action: "CREATE",
+            table: table,
+            recordId: inserted.id,
+          }
+        }).catch(err => logger.error(`Failed to write audit log: ${err.message}`));
+      }
+
       return res.send(inserted);
     }
   } catch (error: any) {
     logger.error(`Error in saveRow (${(req.params as any).table}): ${error.message}`);
-    return res.status(500).send({ error: error.message });
+    return res.status(500).send({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Something went wrong"
+      }
+    });
   }
 };
 
-export const deleteRow = async (req: FastifyRequest, res: FastifyReply) => {
+export const deleteRow = async (req: FastifyRequest, res: FastifyReply, table: string) => {
   try {
-    const { table, id } = req.params as any;
+    const { id } = req.params as any;
 
     const modelName = modelMap[table];
     if (!modelName) {
-      return res.status(400).send({ error: `Invalid table: ${table}` });
+      return res.status(400).send({ 
+        success: false, 
+        error: { code: "INVALID_TABLE", message: `Invalid table: ${table}` } 
+      });
     }
 
     let delegate = (prismaApp as any)[modelName];
@@ -179,6 +236,12 @@ export const deleteRow = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send({ ok: true });
   } catch (error: any) {
     logger.error(`Error in deleteRow (${(req.params as any).table}): ${error.message}`);
-    return res.status(500).send({ error: error.message });
+    return res.status(500).send({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Something went wrong"
+      }
+    });
   }
 };

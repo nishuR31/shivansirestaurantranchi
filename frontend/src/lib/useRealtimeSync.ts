@@ -10,7 +10,8 @@ export function useRealtimeSync() {
   const { isAdmin, mfaSatisfied, user } = useIsAdmin();
   
   // Track previous order IDs to prevent duplicate toasts for the same order across reconnections
-  const processedOrders = useRef<Set<string>>(new Set());
+  // Bounded TTL map to prevent unbounded memory growth
+  const processedOrders = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     // Only connect admin socket if the user is a fully authenticated admin
@@ -32,10 +33,16 @@ export function useRealtimeSync() {
 
     // ─── Order Events ───
     const onOrderCreated = (payload: { order: Order; timestamp: number }) => {
-      const { order } = payload;
+      const { order, timestamp } = payload;
+      
+      const now = Date.now();
+      // Cleanup old entries
+      for (const [id, time] of processedOrders.current.entries()) {
+        if (now - time > 30 * 60 * 1000) processedOrders.current.delete(id); // 30 min TTL
+      }
       
       if (!processedOrders.current.has(order.id)) {
-        processedOrders.current.add(order.id);
+        processedOrders.current.set(order.id, now);
         
         // Play notification sound
         try {
@@ -50,23 +57,29 @@ export function useRealtimeSync() {
           action: {
             label: "View",
             onClick: () => {
-              // Scroll to top where the live orders are
               window.scrollTo({ top: 0, behavior: "smooth" });
             },
           },
         });
       }
 
-      // Invalidate queries to trigger re-fetch and UI update
-      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      // Optimistic cache update instead of full refetch
+      queryClient.setQueryData<Order[]>(["orders"], (old = []) => {
+        if (!old.find(o => o.id === order.id)) {
+          return [order, ...old];
+        }
+        return old;
+      });
       void queryClient.invalidateQueries({ queryKey: ["admin_stats"] });
     };
 
     const onOrderUpdated = (payload: { order: Order }) => {
-      // Refresh the orders list
-      void queryClient.invalidateQueries({ queryKey: ["orders"] });
-      // Invalidate specific public-order query if open (for testing mainly)
-      void queryClient.invalidateQueries({ queryKey: ["public-order", payload.order.id] });
+      // Optimistic cache update instead of full refetch
+      queryClient.setQueryData<Order[]>(["orders"], (old) => {
+        if (!old) return old;
+        return old.map(o => (o.id === payload.order.id ? { ...o, ...payload.order } : o));
+      });
+      // We don't invalidate public-order here since public UI subscribes itself
     };
 
     const onNotificationNew = (payload: { notification: any }) => {
@@ -114,34 +127,4 @@ export function useRealtimeSync() {
       socket.off("settings:updated", onSettingsUpdated);
     };
   }, [isAdmin, mfaSatisfied, user, queryClient]);
-
-  // Public socket for general menu/settings updates (if we want global updates)
-  useEffect(() => {
-    const socket = getPublicSocket();
-    
-    const onMenuUpdated = () => {
-      void queryClient.invalidateQueries({ queryKey: ["menu"] });
-      void queryClient.invalidateQueries({ queryKey: ["offers"] });
-    };
-    
-    const onSettingsUpdated = (payload: { settings: any }) => {
-      if (payload?.settings) {
-        queryClient.setQueryData(["settings"], payload.settings);
-      }
-      void queryClient.invalidateQueries({ queryKey: ["settings"] });
-    };
-
-    socket.on("menu:product_updated", onMenuUpdated);
-    socket.on("menu:availability_changed", onMenuUpdated);
-    socket.on("settings:updated", onSettingsUpdated);
-
-    // Subscribe to menu updates room
-    socket.emit("subscribe:menu");
-
-    return () => {
-      socket.off("menu:product_updated", onMenuUpdated);
-      socket.off("menu:availability_changed", onMenuUpdated);
-      socket.off("settings:updated", onSettingsUpdated);
-    };
-  }, [queryClient]);
 }

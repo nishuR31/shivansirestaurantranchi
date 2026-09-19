@@ -31,6 +31,18 @@ export default function errorHandler(
     `${name || "Error"}: ${message}`,
   );
 
+  let safeMessage = message;
+  let safeStatusCode = statusCode;
+
+  // Redact Prisma errors from being sent to the client
+  if (
+    name.includes("PrismaClient") ||
+    err?.constructor?.name?.includes("PrismaClient")
+  ) {
+    safeMessage = "A database error occurred.";
+    safeStatusCode = 500;
+  }
+
   const errDetails =
     NODE_ENV === "development"
       ? {
@@ -40,5 +52,5 @@ export default function errorHandler(
         }
       : undefined;
 
-  sendError(res, message, statusCode, errDetails);
+  sendError(res, safeMessage, safeStatusCode, errDetails);
 }

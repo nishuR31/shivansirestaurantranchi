@@ -183,10 +183,11 @@ export const updateRole = async (
   await prismaAudit.auditLog.create({
     data: {
       action: "ROLE_CHANGE",
-      entity: "USER",
-      entityId: id,
+      table: "users",
+      recordId: id,
       details: { oldRole: targetUser.role, newRole: role },
       adminId: requestor.id,
+      adminEmail: requestor.email || "unknown",
     },
   });
 
@@ -212,7 +213,7 @@ export const deleteUser = async (
 
   if (targetUser.role === "SUPERADMIN") {
     const superadminsCount = await prismaAdmin.admin.count({ where: { role: "SUPERADMIN" } });
-    const required_approvals = superadminsCount > 1 ? superadminsCount as number - Math.floor(superadminsCount / 2) as number : 0;
+    const required_approvals = Math.max(superadminsCount - 1, 0);
 
     const expires_at = new Date();
     expires_at.setHours(expires_at.getHours() + 48);
@@ -245,10 +246,11 @@ export const deleteUser = async (
   await prismaAudit.auditLog.create({
     data: {
       action: "DELETE_USER",
-      entity: "USER",
-      entityId: id,
+      table: "users",
+      recordId: id,
       details: { deletedEmail: targetUser.email, deletedRole: targetUser.role },
       adminId: requestor.id,
+      adminEmail: requestor.email || "unknown",
     },
   });
 

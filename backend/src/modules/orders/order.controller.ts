@@ -445,16 +445,14 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
     ];
     const currentIdx = STATUS_ORDER.indexOf(current.status);
     const nextIdx = STATUS_ORDER.indexOf(status);
-    // Allow only forward transitions (or explicit CANCELLED from any non-completed state)
-    if (
-      status !== "CANCELLED" &&
-      nextIdx !== -1 &&
-      currentIdx !== -1 &&
-      nextIdx < currentIdx
-    ) {
-      return res
-        .status(400)
-        .send({ error: `Cannot move order back from ${current.status} to ${status}` });
+    
+    // Strict next-step forward transitions or CANCELLED
+    if (status !== "CANCELLED" && status !== current.status) {
+      if (nextIdx !== currentIdx + 1) {
+        return res
+          .status(400)
+          .send({ error: `Invalid transition from ${current.status} to ${status}` });
+      }
     }
     if (current.status === "COMPLETED" || current.status === "CANCELLED") {
       return res
@@ -503,9 +501,41 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
 export const updatePaymentStatus = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { id } = req.params as any;
-    const order = await prismaApp.order.update({
+    const { status } = req.body as any; // Allow the client to pass the specific status if needed, though previously it hardcoded "paid"
+
+    const targetStatus = status || "paid";
+    const VALID_PAYMENT_STATUSES = ["pending", "authorized", "paid", "refunded"];
+    if (!VALID_PAYMENT_STATUSES.includes(targetStatus)) {
+      return res.status(400).send({ error: `Invalid payment status. Must be one of: ${VALID_PAYMENT_STATUSES.join(", ")}` });
+    }
+
+    const currentOrder = await prismaApp.order.findUnique({
       where: { id },
-      data: { payment_status: "paid" },
+      select: { payment_status: true, id: true, order_number: true },
+    });
+
+    if (!currentOrder) return res.status(404).send({ error: "Order not found" });
+    
+    const PAY_ORDER = ["pending", "authorized", "paid", "refunded"];
+    const currentIdx = PAY_ORDER.indexOf(currentOrder.payment_status);
+    const nextIdx = PAY_ORDER.indexOf(targetStatus);
+
+    if (currentOrder.payment_status === targetStatus) {
+      return res.status(400).send({ error: `Payment is already ${targetStatus}` });
+    }
+    
+    // allow pending -> paid (cash) or pending -> authorized -> paid (gateway)
+    if (targetStatus === "refunded" && currentOrder.payment_status !== "paid") {
+       return res.status(400).send({ error: "Can only refund paid orders" });
+    }
+    
+    if (targetStatus === "paid" && currentOrder.payment_status === "refunded") {
+       return res.status(400).send({ error: "Cannot mark refunded order as paid" });
+    }
+
+    const order = await prismaApp.order.update({
+      where: { id, payment_status: currentOrder.payment_status },
+      data: { payment_status: targetStatus },
     });
     emitOrderPaymentUpdated(order);
     return res.send({ ok: true, order });
