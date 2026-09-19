@@ -2,8 +2,8 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { prismaApp, prismaAdmin, prismaAudit } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { z } from "zod";
-import { sendError, sendSuccess } from "../../core/utils/response/responseHandler";
-import { STATUS_CODES } from "../../core/utils/response/statusCodes";
+import { sendError, sendSuccess } from "../../core/utils/common/response";
+import { STATUS_CODES } from "../../core/utils/common/constants";
 import { cache } from "../../core/config/redisConfig";
 
 export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
