@@ -77,7 +77,10 @@ function LiveOrders() {
 
   async function setPaid(order: Order) {
     try {
-      await fetchAPI(`/orders/${order.id}/payment`, { method: "PATCH" });
+      await fetchAPI(`/orders/${order.id}/payment`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "paid" })
+      });
       void qc.invalidateQueries({ queryKey: ["orders"] });
     } catch (error: any) {
       toast.error(error.message);

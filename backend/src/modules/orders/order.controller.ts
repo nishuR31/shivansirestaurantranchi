@@ -478,6 +478,7 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
       order = await prismaApp.order.update({
         where: { id, status: current.status },
         data: { status },
+        include: { order_items: true },
       });
     } catch (err: any) {
       if (err.code === "P2025") {
@@ -514,7 +515,7 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
 export const updatePaymentStatus = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { id } = req.params as any;
-    const { status } = req.body as any; // Allow the client to pass the specific status if needed, though previously it hardcoded "paid"
+    const { status } = (req.body || {}) as any; // Allow the client to pass the specific status if needed, though previously it hardcoded "paid"
 
     const targetStatus = status || "paid";
     const VALID_PAYMENT_STATUSES = ["pending", "authorized", "paid", "refunded"];
@@ -549,6 +550,7 @@ export const updatePaymentStatus = async (req: FastifyRequest, res: FastifyReply
     const order = await prismaApp.order.update({
       where: { id, payment_status: currentOrder.payment_status },
       data: { payment_status: targetStatus },
+      include: { order_items: true },
     });
     emitOrderPaymentUpdated(order);
     return res.send({ ok: true, order });

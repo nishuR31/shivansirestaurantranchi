@@ -14,6 +14,36 @@ const app = fastifyApp;
 // the Bun process and causes a 502 crash loop on Render.
 
 import { healthRoutes } from "./modules/system/health";
+import { fetchWithCache } from "./core/config/redisConfig";
+import { prismaAdmin } from "./core/config/databaseConfig";
+
+app.addHook("onRequest", async (req, res) => {
+  const url = req.url.split("?")[0];
+  // Whitelist essential routes
+  if (
+    url.startsWith("/api/v1/auth") ||
+    url === "/api/v1/data/settings" ||
+    url === "/api/v1/settings" ||
+    url === "/health" ||
+    url.startsWith("/api/v1/webhooks")
+  ) {
+    return;
+  }
+
+  const settings = await fetchWithCache("data:settings", 60, async () => {
+    return prismaAdmin.restaurantSettings.findFirst();
+  });
+
+  if (settings?.is_suspended) {
+    return res.status(settings.shutdown_code ?? 503).send({
+      success: false,
+      error: {
+        code: "RESTAURANT_SUSPENDED",
+        message: settings.shutdown_message ?? "The restaurant is temporarily closed.",
+      },
+    });
+  }
+});
 
 app.register(moduleRoutes, { prefix: "/api/v1" });
 app.register(healthRoutes); // Expose /health at root for infrastructure checks

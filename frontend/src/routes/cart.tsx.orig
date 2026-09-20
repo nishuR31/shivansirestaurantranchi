@@ -15,7 +15,7 @@ import { money } from "@/lib/format";
 import { productImage } from "@/lib/images";
 import type { Category, Offer, Product, RestaurantSettings, Discount } from "@/lib/types";
 import { settingsQuery, tablesQuery, discountsQuery, offersQuery } from "@/lib/db";
-import { placeOrder, requestOrderHistoryCode, getOrdersByPhone } from "@/lib/orders.functions";
+import { placeOrder } from "@/lib/orders.functions";
 import { PAYMENT_METHODS } from "@/lib/types";
 
 export const Route = createFileRoute("/cart")({
@@ -65,10 +65,6 @@ function CartPage() {
   const [takeaway, setTakeaway] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [tableInput, setTableInput] = useState("");
-  
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpVerified, setOtpVerified] = useState(false);
 
   const scanned = tableSource === "qr" && tableNumber != null;
   const activeTables = tables.filter((t) => t.is_active);
@@ -160,33 +156,6 @@ function CartPage() {
   const estTax = ((taxable * Number(settings?.tax_percent ?? 0)) / 100) | 0;
   const estTotal = taxable + estTax + packing + delivery;
 
-  async function handleVerifyPhone() {
-    if (!/^(?:\+?91[\-\s]?)?[6-9]\d{9}$/.test(phone.trim())) {
-      toast.error("Please enter a valid 10-digit phone number");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      if (!otpSent) {
-        await requestOrderHistoryCode({ phone: phone.trim() });
-        setOtpSent(true);
-        toast.success("Verification code sent to your WhatsApp/SMS");
-      } else {
-        if (otp.trim().length !== 6) {
-          toast.error("Please enter the 6-digit verification code");
-          return;
-        }
-        await getOrdersByPhone({ phone: phone.trim(), code: otp.trim() });
-        setOtpVerified(true);
-        toast.success("Phone verified successfully!");
-      }
-    } catch (error: any) {
-      toast.error(error?.message ?? error?.toString() ?? "Verification failed");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (lines.length === 0) return;
@@ -196,11 +165,6 @@ function CartPage() {
     }
     if (!/^(?:\+?91[\-\s]?)?[6-9]\d{9}$/.test(phone.trim())) {
       toast.error("Please enter a valid 10-digit phone number");
-      return;
-    }
-    
-    if (!otpVerified) {
-      handleVerifyPhone();
       return;
     }
     if (!takeaway && (!effectiveTable || effectiveTable < 1)) {
@@ -359,33 +323,7 @@ function CartPage() {
                 placeholder="Enter your phone number"
                 maxLength={16}
                 required
-                disabled={otpSent || otpVerified}
               />
-              {otpSent && !otpVerified && (
-                <div className="mt-3 flex gap-2">
-                  <Input
-                    id="otp"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                    placeholder="6-digit OTP"
-                    maxLength={6}
-                    required
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={handleVerifyPhone} 
-                    disabled={submitting || otp.length !== 6}
-                  >
-                    {submitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                    Verify
-                  </Button>
-                </div>
-              )}
-              {otpVerified && (
-                <p className="mt-1 flex items-center text-xs font-semibold text-green-600 dark:text-green-500">
-                  ✓ Verified
-                </p>
-              )}
             </div>
             <div>
               <Label htmlFor="coupon">Coupon code (optional)</Label>
@@ -532,7 +470,7 @@ function CartPage() {
             disabled={submitting}
           >
             {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-            {!otpVerified ? (otpSent ? "Verify to Place Order" : "Verify Phone to Place Order") : "Place order"}
+            Place order
           </Button>
         </form>
       </div>

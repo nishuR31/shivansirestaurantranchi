@@ -9,8 +9,10 @@ import { getPublicOrder } from "@/lib/orders.functions";
 import { ORDER_FLOW, STATUS_LABEL, type Order } from "@/lib/types";
 import { formatTime } from "@/lib/format";
 import { getPublicSocket } from "@/lib/socket";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import { fetchAPI } from "@/lib/db";
+import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/order/$orderId")({
   validateSearch: (search: Record<string, unknown>) => ({
     t: typeof search["t"] === "string" ? (search["t"] as string) : "",
@@ -189,6 +191,8 @@ function OrderTrackingContent({ orderId, token }: { orderId: string; token: stri
           </p>
         )}
 
+        {(status === "COMPLETED" || status === "SERVED") && <OrderRatingSection order={order} />}
+
         {order.payment_status !== "paid" &&
         order.payment_method !== "Cash" &&
         order.payment_method !== "Card" &&
@@ -216,5 +220,89 @@ function OrderTrackingContent({ orderId, token }: { orderId: string; token: stri
       </div>
       <SiteFooter />
     </main>
+  );
+}
+
+function OrderRatingSection({ order }: { order: Order }) {
+  const items = order.order_items || [];
+  return (
+    <div className="glass rounded-3xl p-6 print:hidden">
+      <h2 className="font-display text-xl font-bold">Rate your food</h2>
+      <p className="mb-4 mt-1 text-sm text-muted-foreground">
+        How was your meal? Tap a star to rate.
+      </p>
+      <div className="space-y-4 border-t border-border pt-4">
+        {items.map((item) => (
+          <ItemRater key={item.id} order={order} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ItemRater({ order, item }: { order: Order; item: any }) {
+  const [stars, setStars] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  async function submit() {
+    if (stars === 0) return;
+    setSubmitting(true);
+    try {
+      await fetchAPI(`/orders/${order.id}/rating`, {
+        method: "POST",
+        body: JSON.stringify({
+          menuItemId: item.product_id,
+          phone: order.customer_phone,
+          stars,
+          comment,
+        }),
+      });
+      setSubmitted(true);
+      toast.success("Thanks for your rating!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit rating");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-2xl bg-accent/10 p-3 text-sm">
+        <span className="font-semibold">{item.name}</span>
+        <span className="text-accent">Rated {stars} ★</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-2xl border border-border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold">{item.name}</span>
+        <div className="flex gap-1 text-2xl">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <button key={s} onClick={() => setStars(s)} className={s <= stars ? "text-accent" : "text-border"}>
+              ★
+            </button>
+          ))}
+        </div>
+      </div>
+      {stars > 0 && (
+        <div className="mt-2 flex gap-2">
+          <Textarea 
+            value={comment} 
+            onChange={(e) => setComment(e.target.value)} 
+            placeholder="Optional review..." 
+            className="h-10 min-h-[40px]" 
+          />
+          <Button onClick={submit} disabled={submitting}>
+            {submitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+            Post
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
