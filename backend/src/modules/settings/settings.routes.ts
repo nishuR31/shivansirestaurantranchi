@@ -20,4 +20,14 @@ export default async function settingsRoutes(app: FastifyInstance) {
     { preHandler: [authenticate as any, requireSuperAdmin as any] },
     settingsController.saveAppConfig,
   );
+  app.post(
+    "/lockdown/enable",
+    { preHandler: [authenticate as any, requireSuperAdmin as any] },
+    settingsController.enableLockdown,
+  );
+  app.post(
+    "/lockdown/disable",
+    { preHandler: [authenticate as any, requireSuperAdmin as any] },
+    settingsController.disableLockdown,
+  );
 }

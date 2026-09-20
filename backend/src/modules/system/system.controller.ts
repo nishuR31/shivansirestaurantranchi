@@ -102,21 +102,6 @@ export const saveRow = async (req: FastifyRequest, res: FastifyReply, table: str
     }
 
     const user = req.user as any;
-    // Intercept SUPERADMIN actions on restaurant_settings for multi-sig governance
-    if (table === "restaurant_settings" && data.is_suspended !== undefined) {
-      const currentSettings = await prismaAdmin.restaurantSettings.findFirst();
-      if (currentSettings && currentSettings.is_suspended !== data.is_suspended) {
-         if (user?.role === "SUPERADMIN") {
-            return res.status(403).send({ 
-              success: false,
-              error: {
-                code: "GOVERNANCE_REQUIRED", 
-                message: "Modifying suspension status requires a Governance Proposal. Please submit it through the Governance tab."
-              }
-            });
-         }
-      }
-    }
 
     let delegate = (prismaApp as any)[modelName];
     if (!delegate) delegate = (prismaAdmin as any)[modelName];

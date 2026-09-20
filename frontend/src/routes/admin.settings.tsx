@@ -10,10 +10,13 @@ import {
   getOwnerSettings,
   saveAppConfig,
   saveOwnerSettings,
+  enableLockdown,
+  disableLockdown,
 } from "@/lib/config.functions";
-import { proposeGovernanceAction } from "@/lib/governance.functions";
 import { useIsAdmin } from "@/lib/auth";
 import { PageLoader } from "@/components/page-loader";
+import { settingsQuery } from "@/lib/db";
+import { Lock, Unlock, ShieldAlert, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/admin/settings")({
   component: SettingsManager,
@@ -53,11 +56,6 @@ function SettingsManager() {
         ]),
       ) as any;
       if (form["id"]) data.id = form["id"];
-
-      const newSuspended = Boolean(form["is_suspended"]);
-      data.is_suspended = newSuspended;
-      data.shutdown_code = form["shutdown_code"] ? Number(form["shutdown_code"]) : null;
-      data.shutdown_message = form["shutdown_message"] ? String(form["shutdown_message"]) : null;
 
       return saveOwnerSettings(data);
     },
@@ -142,56 +140,6 @@ function SettingsManager() {
             />
           </div>
         ))}
-        {isSuperAdmin && <div className="sm:col-span-2 mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-display font-bold text-destructive">
-                Emergency Shutdown
-              </h3>
-              <p className="text-sm text-muted-foreground text-destructive/80">
-                Turn this on to shut down the app for all customers (e.g., maintenance or
-                payment required).
-              </p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={Boolean(form["is_suspended"])}
-                onChange={(e) => setForm({ ...form, is_suspended: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-border after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-destructive peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-destructive/30 dark:border-gray-600 dark:bg-gray-700"></div>
-            </label>
-          </div>
-          {form["is_suspended"] ? (
-            <div className="mt-4 flex flex-col gap-4 border-t border-destructive/20 pt-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">Status Code</label>
-                  <p className="text-xs text-muted-foreground mb-2">e.g. 402, 503</p>
-                  <input
-                    type="number"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    placeholder="503"
-                    value={form["shutdown_code"] || ""}
-                    onChange={(e) => setForm({ ...form, shutdown_code: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Custom Message</label>
-                  <p className="text-xs text-muted-foreground mb-2">Displayed to locked out users</p>
-                  <input
-                    type="text"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    placeholder="Maintenance in progress..."
-                    value={form["shutdown_message"] || ""}
-                    onChange={(e) => setForm({ ...form, shutdown_message: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>}
 
         <div className="sm:col-span-2 mt-2">
           <Button
@@ -204,6 +152,9 @@ function SettingsManager() {
           </Button>
         </div>
       </div>
+
+      {/* ── Lockdown Control Panel ── */}
+      <LockdownPanel />
 
       <div className="glass grid gap-4 rounded-3xl p-6 sm:grid-cols-2">
         <div className="sm:col-span-2">
@@ -313,11 +264,11 @@ function SettingsManager() {
                         return Promise.all(appKeys.map((k) => caches.delete(k)));
                       }).then(() => {
                         clearStorage();
-                        window.location.reload();
+                        globalThis.location.reload();
                       });
                     } else {
                       clearStorage();
-                      window.location.reload();
+                      globalThis.location.reload();
                     }
                   }
                 },
@@ -332,6 +283,265 @@ function SettingsManager() {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Lockdown Control Panel — password-protected, no governance
+   ═══════════════════════════════════════════════════════════════ */
+
+function LockdownPanel() {
+  const qc = useQueryClient();
+  const { data: publicSettings } = useQuery(settingsQuery);
+  const isLocked = Boolean(publicSettings?.is_suspended);
+
+  // Enable lockdown form state
+  const [lockForm, setLockForm] = useState({
+    shutdown_code: 503,
+    shutdown_message: "",
+    lockdown_password: "",
+    confirm_password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Disable lockdown form state
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [showUnlockPassword, setShowUnlockPassword] = useState(false);
+
+  const invalidateAll = () => {
+    void qc.invalidateQueries({ queryKey: ["settings"] });
+    void qc.invalidateQueries({ queryKey: ["owner-settings"] });
+  };
+
+  const lockMutation = useMutation({
+    mutationFn: () => {
+      if (lockForm.lockdown_password !== lockForm.confirm_password) {
+        throw new Error("Passwords do not match");
+      }
+      if (lockForm.lockdown_password.length < 4) {
+        throw new Error("Password must be at least 4 characters");
+      }
+      return enableLockdown({
+        shutdown_code: lockForm.shutdown_code,
+        shutdown_message: lockForm.shutdown_message,
+        lockdown_password: lockForm.lockdown_password,
+      });
+    },
+    onSuccess: () => {
+      toast.success("🔒 Lockdown activated successfully");
+      setLockForm({ shutdown_code: 503, shutdown_message: "", lockdown_password: "", confirm_password: "" });
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to activate lockdown"),
+  });
+
+  const unlockMutation = useMutation({
+    mutationFn: () => disableLockdown({ lockdown_password: unlockPassword }),
+    onSuccess: () => {
+      toast.success("🔓 Lockdown disabled — restaurant is back online!");
+      setUnlockPassword("");
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to disable lockdown"),
+  });
+
+  return (
+    <div className={`rounded-3xl border-2 p-6 transition-colors ${
+      isLocked
+        ? "border-destructive/50 bg-destructive/5"
+        : "border-border glass"
+    }`}>
+      <div className="flex items-start gap-4 mb-5">
+        <div className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${
+          isLocked
+            ? "bg-destructive/15 text-destructive"
+            : "bg-primary/10 text-primary"
+        }`}>
+          {isLocked ? <ShieldAlert className="size-6" /> : <ShieldCheck className="size-6" />}
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold flex items-center gap-2">
+            Lockdown Control
+            {isLocked && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-destructive px-2.5 py-0.5 text-xs font-semibold text-destructive-foreground animate-pulse">
+                <Lock className="size-3" />
+                ACTIVE
+              </span>
+            )}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isLocked
+              ? "Lockdown is currently active. All customers are blocked from accessing the restaurant. Enter the lockdown password to restore access."
+              : "Instantly lock down the entire restaurant app. A password is required to activate and is needed again to unlock — preventing unauthorized access restoration."}
+          </p>
+        </div>
+      </div>
+
+      {isLocked ? (
+        /* ── Unlock Form ── */
+        <div className="space-y-4">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-destructive">Status Code:</span>
+              <span className="font-mono text-foreground">{publicSettings?.shutdown_code || 503}</span>
+            </div>
+            <div className="flex items-start gap-2 text-sm">
+              <span className="font-medium text-destructive shrink-0">Message:</span>
+              <span className="text-foreground whitespace-pre-wrap">
+                {publicSettings?.shutdown_message || "Restaurant is temporarily unavailable."}
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t border-destructive/20 pt-4">
+            <label className="text-sm font-medium text-foreground block mb-1">
+              Enter lockdown password to unlock
+            </label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Only the password set during lockdown activation will work. Failed attempts are logged to the audit trail.
+            </p>
+            <div className="flex gap-3 items-end">
+              <div className="relative flex-1">
+                <input
+                  type={showUnlockPassword ? "text" : "password"}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Enter lockdown password"
+                  value={unlockPassword}
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && unlockPassword && unlockMutation.mutate()}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockPassword(!showUnlockPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showUnlockPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <Button
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 text-white gap-2 shrink-0"
+                disabled={!unlockPassword || unlockMutation.isPending}
+                onClick={() => unlockMutation.mutate()}
+              >
+                <Unlock className="size-4" />
+                {unlockMutation.isPending ? "Unlocking…" : "Disable Lockdown"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ── Activate Lockdown Form ── */
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+            <strong>⚠️ Warning:</strong> Activating lockdown will immediately block all customer access to the restaurant app.
+            Orders, menus, and all features will be inaccessible. You will need the password to unlock.
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">Status Code</label>
+              <p className="text-xs text-muted-foreground mb-2">HTTP status shown to customers (e.g. 402, 503)</p>
+              <input
+                type="number"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="503"
+                value={lockForm.shutdown_code}
+                onChange={(e) => setLockForm({ ...lockForm, shutdown_code: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Shutdown Message</label>
+              <p className="text-xs text-muted-foreground mb-2">Displayed to locked-out users</p>
+              <input
+                type="text"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Maintenance in progress..."
+                value={lockForm.shutdown_message}
+                onChange={(e) => setLockForm({ ...lockForm, shutdown_message: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-1.5">
+              <Lock className="size-3.5" />
+              Lockdown Password
+            </h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              Set a password that will be required to disable lockdown. Keep this safe — without it, lockdown cannot be lifted.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="text-sm font-medium text-foreground block mb-1">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="Min 4 characters"
+                    value={lockForm.lockdown_password}
+                    onChange={(e) => setLockForm({ ...lockForm, lockdown_password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1">Confirm Password</label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                    lockForm.confirm_password && lockForm.confirm_password !== lockForm.lockdown_password
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : "border-input"
+                  }`}
+                  placeholder="Re-enter password"
+                  value={lockForm.confirm_password}
+                  onChange={(e) => setLockForm({ ...lockForm, confirm_password: e.target.value })}
+                />
+                {lockForm.confirm_password && lockForm.confirm_password !== lockForm.lockdown_password && (
+                  <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              variant="destructive"
+              className="gap-2"
+              disabled={
+                !lockForm.lockdown_password ||
+                lockForm.lockdown_password !== lockForm.confirm_password ||
+                lockForm.lockdown_password.length < 4 ||
+                lockMutation.isPending
+              }
+              onClick={() => {
+                toast.error("Confirm: Activate lockdown and block all customer access?", {
+                  description: "You will need the password to unlock the restaurant.",
+                  action: {
+                    label: "🔒 Yes, Lock Down",
+                    onClick: () => lockMutation.mutate(),
+                  },
+                  cancel: {
+                    label: "Cancel",
+                    onClick: () => {},
+                  },
+                });
+              }}
+            >
+              <Lock className="size-4" />
+              {lockMutation.isPending ? "Activating…" : "Activate Lockdown"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

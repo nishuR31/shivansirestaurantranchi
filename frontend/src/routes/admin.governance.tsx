@@ -41,7 +41,7 @@ function GovernanceDashboard() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Governance & Security</h2>
         <p className="text-muted-foreground mt-1">
-          Review and vote on critical actions proposed by other Superadmins.
+          Review and vote on critical governance actions — superadmin deletions require unanimous approval from all other superadmins.
         </p>
       </div>
 
@@ -59,17 +59,17 @@ function GovernanceDashboard() {
 
             // Redact raw payload to avoid exposing secrets like API keys
             let redactedPayload = "Redacted payload for security";
-            if (req.action_type === "SUSPEND_APP") redactedPayload = "Suspension toggled";
             if (req.action_type === "DELETE_SUPERADMIN") redactedPayload = `Target ID: ${req.target_id}`;
+            if (req.action_type === "MODIFY_API_KEYS") redactedPayload = "API key modification request";
 
             return (
               <Card key={req.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      {req.action_type === "SUSPEND_APP" && "Suspend Restaurant"}
                       {req.action_type === "DELETE_SUPERADMIN" && "Delete Superadmin"}
                       {req.action_type === "MODIFY_API_KEYS" && "Modify API Keys"}
+                      {req.action_type !== "DELETE_SUPERADMIN" && req.action_type !== "MODIFY_API_KEYS" && req.action_type}
                       <Badge variant={req.status === "PENDING" ? "default" : req.status === "EXECUTED" ? "success" : "secondary"}>
                         {req.status}
                       </Badge>
@@ -132,4 +132,3 @@ function GovernanceDashboard() {
     </div>
   );
 }
-

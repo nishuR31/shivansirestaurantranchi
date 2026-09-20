@@ -44,9 +44,6 @@ const settingsSchema = z.object({
   packing_charge: z.number().min(0).max(10000),
   delivery_charge: z.number().min(0).max(10000),
   currency: z.string().trim().max(4),
-  is_suspended: z.boolean().optional(),
-  shutdown_code: z.number().optional().nullable(),
-  shutdown_message: z.string().optional().nullable(),
 });
 
 export const getOwnerSettings = async (opts?: { signal?: AbortSignal }) => {
@@ -62,4 +59,30 @@ export const saveOwnerSettings = async (input: unknown) => {
     body: JSON.stringify(data),
   });
   return { ok: true };
+};
+
+/* ── Lockdown API ── */
+
+export const enableLockdown = async (payload: {
+  shutdown_code: number;
+  shutdown_message: string;
+  lockdown_password: string;
+}) => {
+  const res = await fetchAPI<{ success: boolean; message: string }>("/settings/lockdown/enable", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res;
+};
+
+export const disableLockdown = async (payload: {
+  lockdown_password: string;
+}) => {
+  const res = await fetchAPI<{ success: boolean; message: string }>("/settings/lockdown/disable", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res;
 };

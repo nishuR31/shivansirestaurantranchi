@@ -102,6 +102,7 @@ model RestaurantSettings {
   is_suspended     Boolean @default(false)
   shutdown_code    Int?
   shutdown_message String?
+  lockdown_password String?
 
   @@map("restaurant_settings")
 }
