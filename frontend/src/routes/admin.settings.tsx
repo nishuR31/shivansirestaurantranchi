@@ -55,33 +55,14 @@ function SettingsManager() {
       if (form["id"]) data.id = form["id"];
 
       const newSuspended = Boolean(form["is_suspended"]);
-
-      if (isSuperAdmin && settings && Boolean(settings.is_suspended) !== newSuspended) {
-        // Submit as governance request instead of saving directly
-        await proposeGovernanceAction({
-          action_type: "SUSPEND_APP",
-          payload: {
-            message: form["shutdown_message"] ? String(form["shutdown_message"]) : null,
-            code: form["shutdown_code"] ? Number(form["shutdown_code"]) : null,
-            is_suspended: newSuspended
-          }
-        });
-        
-        return { governance: true };
-      }
-
-      // If we got here, no suspension change was made, so we just save the normal fields
-      // NOTE: We do not set is_suspended, shutdown_code, or shutdown_message on `data` 
-      // because they are strictly controlled by governance.
+      data.is_suspended = newSuspended;
+      data.shutdown_code = form["shutdown_code"] ? Number(form["shutdown_code"]) : null;
+      data.shutdown_message = form["shutdown_message"] ? String(form["shutdown_message"]) : null;
 
       return saveOwnerSettings(data);
     },
-    onSuccess: (res: any) => {
-      if (res?.governance) {
-        toast.success("Governance proposal submitted for suspension change.");
-      } else {
-        toast.success("Settings saved");
-      }
+    onSuccess: () => {
+      toast.success("Settings saved");
       void qc.invalidateQueries({ queryKey: ["owner-settings"] });
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },
@@ -299,6 +280,55 @@ function SettingsManager() {
             onClick={() => saveConfig.mutate()}
           >
             Save owner & WhatsApp
+          </Button>
+        </div>
+      </div>
+
+      <div className="glass grid gap-4 rounded-3xl p-6 sm:grid-cols-2">
+        <div className="sm:col-span-2 flex flex-col gap-2">
+          <h3 className="font-display text-lg font-bold">System Maintenance</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            If the application is showing stale builds, encountering internal server errors during load, or
+            experiencing caching issues, click the button below to clear all service workers,
+            caches, and local storage.
+          </p>
+          <Button
+            variant="destructive"
+            className="w-fit"
+            onClick={() => {
+              toast.error("Are you sure you want to clear all app caches and reload?", {
+                description: "This will clear local storage and refresh the page.",
+                action: {
+                  label: "Yes, Clear Cache",
+                  onClick: () => {
+                    const clearStorage = () => {
+                      localStorage.removeItem("maatara-theme-v1");
+                      localStorage.removeItem("maatara-cart-v1");
+                    };
+                    if ("caches" in window) {
+                      void caches.keys().then((keys) => {
+                        const appKeys = keys.filter(
+                          (k) => k.includes("maatara") || k.includes("vite") || k.includes("workbox")
+                        );
+                        return Promise.all(appKeys.map((k) => caches.delete(k)));
+                      }).then(() => {
+                        clearStorage();
+                        window.location.reload();
+                      });
+                    } else {
+                      clearStorage();
+                      window.location.reload();
+                    }
+                  }
+                },
+                cancel: {
+                  label: "Cancel",
+                  onClick: () => {}
+                }
+              });
+            }}
+          >
+            Clear App Cache & Reload
           </Button>
         </div>
       </div>

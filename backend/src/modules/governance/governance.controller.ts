@@ -40,14 +40,7 @@ export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
 };
 
 const requestSchema = z.discriminatedUnion("action_type", [
-  z.object({
-    action_type: z.literal("SUSPEND_APP"),
-    target_id: z.string().optional().nullable(),
-    payload: z.object({
-      is_suspended: z.boolean(),
-      message: z.string().optional(),
-    }),
-  }),
+
   z.object({
     action_type: z.literal("DELETE_SUPERADMIN"),
     target_id: z.string(),
@@ -103,22 +96,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
     });
 
     if (required_approvals === 0) {
-      if (parsed.data.action_type === "SUSPEND_APP") {
-        const payload = parsed.data.payload;
-        await prismaAdmin.restaurantSettings.updateMany({
-          data: {
-            is_suspended: payload?.is_suspended ?? true,
-            shutdown_message: payload?.message ?? "Restaurant suspended",
-            shutdown_code: 402
-          }
-        });
-        try {
-          if (cache) await cache.del("data:settings");
-          emitSettingsUpdated({ is_suspended: payload?.is_suspended ?? true, shutdown_message: payload?.message ?? "Restaurant suspended", shutdown_code: 402 });
-        } catch (e) {
-          logger.error("Failed to invalidate cache or emit event");
-        }
-      } else if (parsed.data.action_type === "DELETE_SUPERADMIN") {
+      if (parsed.data.action_type === "DELETE_SUPERADMIN") {
         if (parsed.data.target_id) {
           await prismaAdmin.admin.delete({ where: { id: parsed.data.target_id } });
         }
@@ -221,24 +199,8 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
           data: { status: "EXECUTED", approvals: approvalsCount }
         });
 
-        let suspension_changed = false;
-        let new_suspension_state = false;
-        let new_shutdown_message = "";
-
         // Execution Logic
-        if (actionRequest.action_type === "SUSPEND_APP") {
-          const payload = actionRequest.payload as any;
-          await tx.restaurantSettings.updateMany({
-            data: {
-              is_suspended: payload?.is_suspended ?? true,
-              shutdown_message: payload?.message ?? "Restaurant suspended",
-              shutdown_code: 402
-            }
-          });
-          suspension_changed = true;
-          new_suspension_state = payload?.is_suspended ?? true;
-          new_shutdown_message = payload?.message ?? "Restaurant suspended";
-        } else if (actionRequest.action_type === "DELETE_SUPERADMIN") {
+        if (actionRequest.action_type === "DELETE_SUPERADMIN") {
           if (actionRequest.target_id) {
             const superadminCount = await tx.admin.count({ where: { role: "SUPERADMIN" } });
             if (superadminCount <= 1) {
@@ -264,20 +226,11 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
              });
            }
         }
-        return { executed: true, rejected: false, action_type: actionRequest.action_type, suspension_changed, new_suspension_state, new_shutdown_message };
+        return { executed: true, rejected: false, action_type: actionRequest.action_type };
       }
 
-      return { executed: false, rejected: false, action_type: actionRequest.action_type, suspension_changed: false, new_suspension_state: false, new_shutdown_message: "" };
+      return { executed: false, rejected: false, action_type: actionRequest.action_type };
     });
-
-    if (result.suspension_changed) {
-      try {
-        if (cache) await cache.del("data:settings");
-        emitSettingsUpdated({ is_suspended: result.new_suspension_state, shutdown_message: result.new_shutdown_message, shutdown_code: 402 });
-      } catch (err) {
-        logger.error("Failed to update cache or emit settings");
-      }
-    }
 
     await prismaAudit.auditLog.create({
       data: {

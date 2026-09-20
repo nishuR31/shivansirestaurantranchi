@@ -1,9 +1,10 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { prismaAdmin } from "../../core/config/databaseConfig";
+import { prismaAdmin, prismaAudit } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import env from "../../core/config/envConfig";
 
-import { fetchWithCache } from "../../core/config/redisConfig";
+import { fetchWithCache, cache } from "../../core/config/redisConfig";
+import { emitSettingsUpdated } from "../../core/providers/socketEmitter";
 
 export const getSettings = async (req: FastifyRequest, res: FastifyReply) => {
   try {
@@ -60,13 +61,7 @@ export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) 
     // Don't update id
     delete data.id;
 
-    if (
-      Object.hasOwn(data, "is_suspended") ||
-      Object.hasOwn(data, "shutdown_code") ||
-      Object.hasOwn(data, "shutdown_message")
-    ) {
-      return res.status(403).send({ success: false, error: { code: "GOVERNANCE_REQUIRED", message: "These settings can only be changed via Governance" } });
-    }
+    // Let the owner update any setting directly, including suspension
 
     const settings = await prismaAdmin.restaurantSettings.findFirst();
     if (!settings) {
@@ -81,6 +76,26 @@ export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) 
 
     if (cache) {
       await cache.del("data:settings");
+    }
+    
+    // Notify clients of the updated settings in realtime
+    emitSettingsUpdated({
+      is_suspended: data.is_suspended,
+      shutdown_code: data.shutdown_code,
+      shutdown_message: data.shutdown_message
+    });
+
+    const user = req.user as any;
+    if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN")) {
+      await prismaAudit.auditLog.create({
+        data: {
+          adminId: user.id,
+          adminEmail: user.email || "unknown",
+          action: "UPDATE",
+          table: "restaurant_settings",
+          recordId: "global",
+        }
+      }).catch(err => logger.error(`Failed to write audit log: ${err.message}`));
     }
 
     return res.send({ ok: true });
@@ -111,6 +126,19 @@ export const saveAppConfig = async (req: FastifyRequest, res: FastifyReply) => {
       await prismaAdmin.appConfig.create({
         data: configData,
       });
+    }
+
+    const user = req.user as any;
+    if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN")) {
+      await prismaAudit.auditLog.create({
+        data: {
+          adminId: user.id,
+          adminEmail: user.email || "unknown",
+          action: "UPDATE",
+          table: "app_config",
+          recordId: "global",
+        }
+      }).catch(err => logger.error(`Failed to write audit log: ${err.message}`));
     }
 
     return res.send({ ok: true });

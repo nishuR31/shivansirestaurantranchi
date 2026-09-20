@@ -6,7 +6,7 @@ import {
   useRouter,
   useRouterState,
 } from "@tanstack/react-router";
-import { useEffect, useRef, useState, Suspense, type ReactNode } from "react";
+import { useEffect, useRef, useState, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { Home, ArrowLeft, RefreshCw, ChefHat, AlertTriangle } from "lucide-react";
 import { PageLoader } from "@/components/page-loader";
 import { StartupSplash } from "@/components/startup-splash";
@@ -239,6 +239,28 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+class SuspensionErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("SuspensionGuard caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return <ErrorComponent error={this.state.error} reset={() => this.setState({ hasError: false, error: null })} />;
+    }
+    return this.props.children;
+  }
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: RootComponent,
   pendingComponent: PageLoader,
@@ -368,9 +390,11 @@ function RootComponent() {
             <SiteHeader />
             {/* Suspense boundary: shows PageLoader while lazy route chunks load */}
             <Suspense fallback={<PageLoader />}>
-              <SuspensionGuard>
-                <Outlet />
-              </SuspensionGuard>
+              <SuspensionErrorBoundary>
+                <SuspensionGuard>
+                  <Outlet />
+                </SuspensionGuard>
+              </SuspensionErrorBoundary>
             </Suspense>
           </div>
           <Toaster position="top-center" richColors />

@@ -37,7 +37,7 @@ export type GovernanceApiResponse = {
 };
 
 export const getGovernanceRequests = async (opts?: { signal?: AbortSignal }) => {
-  const res = await fetchAPI<GovernanceApiResponse>("/governance", { signal: opts?.signal });
+  const res = await fetchAPI<GovernanceApiResponse>("/governance/", { signal: opts?.signal });
   return res.data?.requests || [];
 };
 

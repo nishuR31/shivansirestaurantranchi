@@ -17,8 +17,8 @@ export default async function uploadToSupabase(
   buffer: Buffer,
   filename: string,
 ): Promise<SupabaseUploadResult> {
-  const supabaseUrl = SUPABASE_URL;
-  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  const supabaseUrl = SUPABASE_URL?.trim();
+  const serviceRoleKey = (SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY)?.trim();
   const bucket = SUPABASE_STORAGE_BUCKET;
 
   if (!supabaseUrl) {
@@ -68,8 +68,8 @@ export default async function uploadToSupabase(
 }
 
 export async function deleteFromSupabase(publicUrl: string): Promise<void> {
-  const supabaseUrl = SUPABASE_URL;
-  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  const supabaseUrl = SUPABASE_URL?.trim();
+  const serviceRoleKey = (SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY)?.trim();
   const bucket = SUPABASE_STORAGE_BUCKET;
 
   if (!supabaseUrl || !serviceRoleKey || !bucket) {

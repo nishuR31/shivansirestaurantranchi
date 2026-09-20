@@ -124,7 +124,7 @@ function getSupabaseAdmin() {
       "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env",
     );
   }
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  return createClient(SUPABASE_URL.trim(), SUPABASE_SERVICE_ROLE_KEY.trim());
 }
 
 export const uploadProductImage = async (req: FastifyRequest, res: FastifyReply) => {
