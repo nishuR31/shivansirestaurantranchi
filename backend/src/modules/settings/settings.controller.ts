@@ -86,12 +86,12 @@ export const saveOwnerSettings = async (req: FastifyRequest, res: FastifyReply) 
       await cache.del("data:settings");
     }
     
+    const updatedSettings = await prismaAdmin.restaurantSettings.findFirst();
+    
     // Notify clients of the updated settings in realtime
-    emitSettingsUpdated({
-      is_suspended: data.is_suspended,
-      shutdown_code: data.shutdown_code,
-      shutdown_message: data.shutdown_message
-    });
+    if (updatedSettings) {
+      emitSettingsUpdated(updatedSettings);
+    }
 
     const user = req.user as any;
     if (user && (user.role === "ADMIN" || user.role === "SUPERADMIN")) {
@@ -198,11 +198,10 @@ export const enableLockdown = async (req: FastifyRequest, res: FastifyReply) => 
 
     if (cache) await cache.del("data:settings");
 
-    emitSettingsUpdated({
-      is_suspended: true,
-      shutdown_code: shutdown_code ? Number(shutdown_code) : 503,
-      shutdown_message: shutdown_message || "Restaurant is temporarily unavailable.",
-    });
+    const updatedSettings = await prismaAdmin.restaurantSettings.findFirst();
+    if (updatedSettings) {
+      emitSettingsUpdated(updatedSettings);
+    }
 
     await prismaAudit.auditLog.create({
       data: {
@@ -285,11 +284,10 @@ export const disableLockdown = async (req: FastifyRequest, res: FastifyReply) =>
 
     if (cache) await cache.del("data:settings");
 
-    emitSettingsUpdated({
-      is_suspended: false,
-      shutdown_code: null,
-      shutdown_message: null,
-    });
+    const updatedSettings = await prismaAdmin.restaurantSettings.findFirst();
+    if (updatedSettings) {
+      emitSettingsUpdated(updatedSettings);
+    }
 
     await prismaAudit.auditLog.create({
       data: {

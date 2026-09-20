@@ -35,13 +35,28 @@ function toPublicOrderDTO(order: any) {
 
 function toPublicSettingsDTO(settings: any) {
   if (!settings) return settings;
-  // Expose only safe settings
+  // Expose only safe settings (matching getSettings PUBLIC_SETTINGS_COLUMNS)
   return {
-    restaurant_name: settings.restaurant_name,
-    is_accepting_orders: settings.is_accepting_orders,
+    id: settings.id,
+    name: settings.name,
+    tagline: settings.tagline,
+    logo_url: settings.logo_url,
+    banner_url: settings.banner_url,
+    address: settings.address,
+    phone: settings.phone,
+    gst_number: settings.gst_number,
     upi_id: settings.upi_id,
+    opening_time: settings.opening_time,
+    closing_time: settings.closing_time,
+    tax_percent: settings.tax_percent,
+    packing_charge: settings.packing_charge,
+    delivery_charge: settings.delivery_charge,
     currency: settings.currency,
-    tax_percent: settings.tax_percent
+    theme: settings.theme,
+    is_suspended: settings.is_suspended,
+    shutdown_code: settings.shutdown_code,
+    shutdown_message: settings.shutdown_message,
+    has_lockdown_password: Boolean(settings.lockdown_password),
   };
 }
 
