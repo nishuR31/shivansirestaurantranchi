@@ -3,6 +3,7 @@ import { prismaApp } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { fetchWithCache } from "../../core/config/redisConfig";
 import { normalizePhone } from "../../core/utils/phone";
+import { NODE_ENV } from "../../core/config/envConfig";
 
 export const getCategories = async (req: FastifyRequest, res: FastifyReply) => {
   try {
@@ -12,7 +13,7 @@ export const getCategories = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(categories);
   } catch (error: any) {
     logger.error(`Error in getCategories: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -26,7 +27,7 @@ export const getProducts = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(products);
   } catch (error: any) {
     logger.error(`Error in getProducts: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -38,7 +39,7 @@ export const getOffers = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(offers);
   } catch (error: any) {
     logger.error(`Error in getOffers: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -50,7 +51,7 @@ export const getDiscounts = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(discounts);
   } catch (error: any) {
     logger.error(`Error in getDiscounts: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -62,7 +63,7 @@ export const getLoyaltyRules = async (req: FastifyRequest, res: FastifyReply) =>
     return res.send(rules);
   } catch (error: any) {
     logger.error(`Error in getLoyaltyRules: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -74,7 +75,7 @@ export const getTables = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(tables);
   } catch (error: any) {
     logger.error(`Error in getTables: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -86,7 +87,7 @@ export const getInventory = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(inventory);
   } catch (error: any) {
     logger.error(`Error in getInventory: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -125,7 +126,7 @@ export const getCustomers = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(merged);
   } catch (error: any) {
     logger.error(`Error in getCustomers: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -139,7 +140,7 @@ export const getOrders = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(orders);
   } catch (error: any) {
     logger.error(`Error in getOrders: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -152,7 +153,7 @@ export const getNotifications = async (req: FastifyRequest, res: FastifyReply) =
     return res.send(notifications);
   } catch (error: any) {
     logger.error(`Error in getNotifications: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -226,7 +227,7 @@ export const uploadProductImage = async (req: FastifyRequest, res: FastifyReply)
     return res.send({ ok: true, url: publicUrl });
   } catch (error: any) {
     logger.error(`Error in uploadProductImage: ${error.message}`);
-    return res.status(500).send({ error: error.message || "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -263,6 +264,6 @@ export const deleteProductImage = async (req: FastifyRequest, res: FastifyReply)
     return res.send({ ok: true, deleted: storagePath });
   } catch (error: any) {
     logger.error(`Error in deleteProductImage: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };

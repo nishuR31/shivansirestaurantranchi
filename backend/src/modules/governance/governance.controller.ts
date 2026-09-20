@@ -7,6 +7,7 @@ import { STATUS_CODES } from "../../core/utils/common/constants";
 import { cache } from "../../core/config/redisConfig";
 import { emitSettingsUpdated } from "../../core/providers/socketEmitter";
 import env from "../../core/config/envConfig";
+import { NODE_ENV } from "../../core/config/envConfig";
 import { sendWhatsAppMessage } from "../../core/utils/whatsapp";
 
 export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
@@ -35,7 +36,7 @@ export const getRequests = async (req: FastifyRequest, res: FastifyReply) => {
     return sendSuccess(res, "Requests fetched", STATUS_CODES.OK, { requests });
   } catch (error: any) {
     logger.error(`Error in getRequests: ${error.message}`);
-    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
+    return sendError(res, NODE_ENV === "development" ? (error as Error).message : "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -130,7 +131,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
     return sendSuccess(res, "Action requested", STATUS_CODES.OK, { request: newRequest });
   } catch (error: any) {
     logger.error(`Error in requestAction: ${error.message}`);
-    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
+    return sendError(res, NODE_ENV === "development" ? (error as Error).message : "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -278,6 +279,6 @@ export const submitVote = async (req: FastifyRequest, res: FastifyReply) => {
         error.message === "Target is not a valid SUPERADMIN") {
         return sendError(res, error.message, STATUS_CODES.BAD_REQUEST);
     }
-    return sendError(res, "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
+    return sendError(res, NODE_ENV === "development" ? (error as Error).message : "Internal server error", STATUS_CODES.INTERNAL_SERVER_ERROR);
   }
 };

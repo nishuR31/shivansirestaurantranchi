@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { prismaApp } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
 import { fetchWithCache } from "../../core/config/redisConfig";
-
+import { NODE_ENV } from "../../core/config/envConfig";
 export const getReviews = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { limit } = (req.query as any) ?? {};
@@ -17,7 +17,7 @@ export const getReviews = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(reviews);
   } catch (error: any) {
     logger.error(`Error in getReviews: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -35,7 +35,7 @@ export const getAdminReviews = async (req: FastifyRequest, res: FastifyReply) =>
     return res.send(reviews);
   } catch (error: any) {
     logger.error(`Error in getAdminReviews: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -46,7 +46,7 @@ export const deleteReview = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send({ ok: true, deleted: id });
   } catch (error: any) {
     logger.error(`Error in deleteReview: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -84,7 +84,7 @@ export const getGoogleRatings = async (req: FastifyRequest, res: FastifyReply) =
     return res.send(data);
   } catch (error: any) {
     logger.error(`Error in getGoogleRatings: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -104,7 +104,7 @@ export const updateReviewPublished = async (req: FastifyRequest, res: FastifyRep
     return res.send({ ok: true, review });
   } catch (error: any) {
     logger.error(`Error in updateReviewPublished: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 

@@ -41,7 +41,7 @@ export const getSettings = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send(settings || null);
   } catch (error: any) {
     logger.error(`Error in getSettings: ${error.message}`);
-    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: "Internal Server Error" } });
+    return res.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: env.NODE_ENV === "development" ? (error as Error).message : "Internal Server Error" } });
   }
 };
 

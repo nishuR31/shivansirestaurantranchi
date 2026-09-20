@@ -8,6 +8,7 @@ import {
 } from "../../core/providers/socketEmitter";
 import { prismaApp, prismaAdmin } from "../../core/config/databaseConfig";
 import logger from "../../core/config/loggerConfig";
+import { NODE_ENV } from "../../core/config/envConfig";
 import crypto from "crypto";
 import { sendWhatsAppMessage } from "../../core/utils/whatsapp";
 import jwt from "jsonwebtoken";
@@ -506,7 +507,7 @@ export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) 
     return res.send({ ok: true, order });
   } catch (error: any) {
     logger.error(`Error in updateOrderStatus: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -553,7 +554,7 @@ export const updatePaymentStatus = async (req: FastifyRequest, res: FastifyReply
     return res.send({ ok: true, order });
   } catch (error: any) {
     logger.error(`Error in updatePaymentStatus: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
 
@@ -877,6 +878,6 @@ export const submitRating = async (req: FastifyRequest, res: FastifyReply) => {
     return res.send({ ok: true, rating });
   } catch (error: any) {
     logger.error(`Error in submitRating: ${error.message}`);
-    return res.status(500).send({ error: "Internal Server Error" });
+    return res.status(500).send({ error: NODE_ENV === "development" ? error.message : "Internal Server Error" });
   }
 };
