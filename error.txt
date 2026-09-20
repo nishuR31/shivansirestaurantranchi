@@ -1,0 +1,31 @@
+index-Cfwl9hjD.js:12
+ VITE_SOCKET_URL is not defined in environment variables. Real-time features may not work.
+/api/v1/auth/me:1 
+ Failed to load resource: the server responded with a status of 401 ()
+/api/v1/auth/refresh-token:1 
+ Failed to load resource: the server responded with a status of 401 ()
+/api/v1/data/products:1 
+ Failed to load resource: the server responded with a status of 500 ()
+vendor-misc-CSW-h8S4.js:3 
+ GET https://shivansirestaurantranchi.vercel.app/api/v1/data/products 500 (Internal Server Error)
+vendor-misc-CSW-h8S4.js:3 
+ GET https://shivansirestaurantranchi.vercel.app/api/v1/data/products 500 (Internal Server Error)
+index-Cfwl9hjD.js:12
+ ApiError: Internal Server Error
+    at G (index-Cfwl9hjD.js:12:8451)
+index-Cfwl9hjD.js:12
+ ApiError: Internal Server Error
+    at G (index-Cfwl9hjD.js:12:8451)
+vendor-react-DS8esHXv.js:8
+ ApiError: Internal Server Error
+    at G (index-Cfwl9hjD.js:12:8451)
+index-Cfwl9hjD.js:12
+ SuspensionGuard caught an error: ApiError: Internal Server Error
+    at G (index-Cfwl9hjD.js:12:8451) 
+{componentStack: '\n    at T (https://shivansirestaurantranchi.vercel…l.app/assets/vendor-tanstack--849FLpc.js:1:80720)'}
+componentStack
+: 
+"\n    at T (https://shivansirestaurantranchi.vercel.app/assets/routes-DOl06nMz.js:1:591)\n    at l (<anonymous>)\n    at https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:76874\n    at sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74624)\n    at sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74624)\n    at Suspense (<anonymous>)\n    at sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74624)\n    at fr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:75355)\n    at https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74978\n    at Suspense (<anonymous>)\n    at https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:78114\n    at Pt (https://shivansirestaurantranchi.vercel.app/assets/index-Cfwl9hjD.js:12:32814)\n    at At (https://shivansirestaurantranchi.vercel.app/assets/index-Cfwl9hjD.js:12:31571)\n    at Suspense (<anonymous>)\n    at div (<anonymous>)\n    at ze (https://shivansirestaurantranchi.vercel.app/assets/index-Cfwl9hjD.js:12:2030)\n    at Dr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:81064)\n    at ee (https://shivansirestaurantranchi.vercel.app/assets/vendor-redux-DW__EgQE.js:1:1561)\n    at It (https://shivansirestaurantranchi.vercel.app/assets/index-Cfwl9hjD.js:12:38157)\n    at https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:76874\n    at tn (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60922)\n    at en (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60706)\n    at ar (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74245)\n    at tn (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60922)\n    at en (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60706)\n    at sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74624)\n    at sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74624)\n    at fr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:75355)\n    at https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:74978\n    at tn (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60922)\n    at en (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:60706)\n    at vr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:80075)\n    at Suspense (<anonymous>)\n    at _r (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:79756)\n    at Sr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:80487)\n    at Cr (https://shivansirestaurantranchi.vercel.app/assets/vendor-tanstack--849FLpc.js:1:80720)"
+[[Prototype]]
+: 
+Object

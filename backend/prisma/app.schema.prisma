@@ -5,60 +5,36 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("APP_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("APP_DATABASE_URL")
   directUrl = env("APP_DIRECT_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPERADMIN
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  PREPARED
-  SERVED
-  COMPLETED
-  CANCELLED
-}
-
 model User {
-  id       String  @id @default(uuid())
-  name     String
-  email    String  @unique
-  phone    String? @unique
-  password String  @map("hashed_password")
-  role     Role
-
-  avatarUrl String?
-
-  isActive     Boolean  @default(true)
-  lastLogin    DateTime @default(now())
-  refreshToken String?
-
-  totpSecret    String?
-  isTotpEnabled Boolean @default(false)
-
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  phone            String?   @unique
+  password         String    @map("hashed_password")
+  role             Role
+  avatarUrl        String?
+  isActive         Boolean   @default(true)
+  lastLogin        DateTime  @default(now())
+  refreshToken     String?
+  totpSecret       String?
+  isTotpEnabled    Boolean   @default(false)
   currentChallenge String?
-
-  passkeys Passkey[]
-
-  birthday       DateTime?
-  visits         Int       @default(0)
-  reward_points  Int       @default(0)
-  total_spend    Decimal   @default(0)
-  favourite_item String?
-  saved_address  String?
-  last_visit     DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  orders Order[]
+  birthday         DateTime?
+  visits           Int       @default(0)
+  reward_points    Int       @default(0)
+  total_spend      Decimal   @default(0)
+  favourite_item   String?
+  saved_address    String?
+  last_visit       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  orders           Order[]
+  passkeys         Passkey[]
 
   @@index([email])
   @@index([role])
@@ -66,42 +42,40 @@ model User {
 }
 
 model Category {
-  id          String  @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  slug        String  @unique
+  slug        String    @unique
   description String?
   image_url   String?
-  sort_order  Int     @default(0)
-  is_active   Boolean @default(true)
-
-  products Product[]
+  sort_order  Int       @default(0)
+  is_active   Boolean   @default(true)
+  products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id             String    @id @default(uuid())
+  id             String      @id @default(uuid())
   category_id    String?
-  category       Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
   name           String
   description    String?
   image_url      String?
   price          Decimal
   offer_price    Decimal?
-  rating         Decimal   @default(0)
-  review_count   Int       @default(0)
-  prep_time_mins Int       @default(15)
-  is_available   Boolean   @default(true)
-  is_spicy       Boolean   @default(false)
-  calories       Int       @default(0)
-  is_special     Boolean   @default(false)
-  is_popular     Boolean   @default(false)
-  is_recommended Boolean   @default(false)
-  sold_by_weight Boolean   @default(false)
+  rating         Decimal     @default(0)
+  review_count   Int         @default(0)
+  prep_time_mins Int         @default(15)
+  is_available   Boolean     @default(true)
+  is_spicy       Boolean     @default(false)
+  calories       Int         @default(0)
+  is_special     Boolean     @default(false)
+  is_popular     Boolean     @default(false)
+  is_recommended Boolean     @default(false)
+  sold_by_weight Boolean     @default(false)
   price_per_kg   Decimal?
-  sort_order     Int       @default(0)
-
-  orderItems OrderItem[]
+  sort_order     Int         @default(0)
+  orderItems     OrderItem[]
+  category       Category?   @relation(fields: [category_id], references: [id])
 
   @@index([category_id, is_available])
   @@index([is_available, sort_order])
@@ -180,12 +154,9 @@ model Order {
   id              String      @id @default(uuid())
   order_number    String      @unique
   bill_id         String?     @unique
-  idempotency_key String?     @unique
-  request_hash    String?     @unique
   session_token   String
   table_number    Int?
   user_id         String?
-  user            User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   customer_name   String?
   customer_phone  String?
   status          OrderStatus @default(PENDING)
@@ -200,8 +171,10 @@ model Order {
   total           Decimal
   notes           String?
   created_at      DateTime    @default(now())
-
-  order_items OrderItem[]
+  idempotency_key String?     @unique
+  request_hash    String?     @unique
+  order_items     OrderItem[]
+  user            User?       @relation(fields: [user_id], references: [id])
 
   @@index([user_id, created_at])
   @@index([customer_phone, created_at])
@@ -213,15 +186,15 @@ model Order {
 model OrderItem {
   id           String   @id @default(uuid())
   order_id     String
-  order        Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product_id   String?
-  product      Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
   name         String
   unit_price   Decimal
   quantity     Decimal
   weight_label String?
   instructions String?
   line_total   Decimal
+  order        Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product      Product? @relation(fields: [product_id], references: [id])
 
   @@index([order_id])
   @@index([product_id])
@@ -244,9 +217,9 @@ model Rating {
   id         String   @id @default(cuid())
   orderId    String
   menuItemId String
-  userId     String? // nullable for guest orders
-  phone      String // used to associate guest ratings
-  stars      Int // 1–5
+  userId     String?
+  phone      String
+  stars      Int
   comment    String?
   createdAt  DateTime @default(now())
 
@@ -286,13 +259,27 @@ model Passkey {
   credentialPublicKey Bytes
   counter             BigInt
   transports          String[]
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  userId              String
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([credentialID])
   @@map("user_passkeys")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  PREPARED
+  SERVED
+  COMPLETED
+  CANCELLED
 }

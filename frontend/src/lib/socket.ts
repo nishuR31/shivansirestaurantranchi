@@ -1,8 +1,8 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env["VITE_SOCKET_URL"];
+const SOCKET_URL = import.meta.env["VITE_SOCKET_URL"] || (typeof window !== 'undefined' ? window.location.origin : '');
 
-if (!SOCKET_URL) {
+if (!SOCKET_URL && typeof window === 'undefined') {
   console.warn("VITE_SOCKET_URL is not defined in environment variables. Real-time features may not work.");
 }
 
