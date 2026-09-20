@@ -61,9 +61,10 @@ export default defineConfig({
           }
 
           // ── Icon set (lucide-react is ~300 kB unminified) ────────────────
-          if (id.includes("node_modules/lucide-react")) {
+          if (id.includes("node_modules/lucide-react/")) {
             return "vendor-icons";
           }
+
 
           // ── Redux ────────────────────────────────────────────────────────
           if (
@@ -79,6 +80,7 @@ export default defineConfig({
           if (id.includes("node_modules/")) {
             return "vendor-misc";
           }
+          return undefined;
         },
       },
     },

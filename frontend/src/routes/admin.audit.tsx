@@ -20,8 +20,8 @@ function AuditLogsPage() {
     enabled: isSuperAdmin,
   });
 
-  const logs = data?.logs || [];
-  const total = data?.total || 0;
+  const logs = (data as any)?.logs || [];
+  const total = (data as any)?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
   if (!isSuperAdmin) {

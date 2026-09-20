@@ -249,11 +249,11 @@ class SuspensionErrorBoundary extends Component<{ children: ReactNode }, { hasEr
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("SuspensionGuard caught an error:", error, errorInfo);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError && this.state.error) {
       return <ErrorComponent error={this.state.error} reset={() => this.setState({ hasError: false, error: null })} />;
     }

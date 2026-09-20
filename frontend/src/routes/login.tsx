@@ -40,7 +40,7 @@ type WaStage = "phone" | "otp";
 const emailLoginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
-  wantTotp: z.boolean().default(false),
+  wantTotp: z.boolean(),
 });
 
 const totpSchema = z.object({

@@ -13,6 +13,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { useCart } from "@/lib/cart";
 import { money } from "@/lib/format";
 import { productImage } from "@/lib/images";
+import type { Category, Offer, Product, RestaurantSettings, Discount } from "@/lib/types";
 import { settingsQuery, tablesQuery, discountsQuery, offersQuery } from "@/lib/db";
 import { placeOrder } from "@/lib/orders.functions";
 import { PAYMENT_METHODS } from "@/lib/types";
@@ -113,13 +114,13 @@ function CartPage() {
   for (const d of eligible) {
     // If discount is specific to products or categories, only apply to eligible lines
     let eligibleSubtotal = subtotal;
-    if ((d.product_ids && d.product_ids.length > 0) || (d.category_ids && d.category_ids.length > 0)) {
+    if ((((d as Discount).product_ids) && ((d as Discount).product_ids).length > 0) || (((d as Discount).category_ids) && ((d as Discount).category_ids).length > 0)) {
       eligibleSubtotal = lines.reduce((sum, line) => {
         // We'd need line.categoryId to fully check category, but since cartLine doesn't store categoryId,
         // we'll rely on product_ids if available, or just use full subtotal if not strict.
         // For a full fix, we could lookup the product's categoryId from the cache, but product_id is sufficient here
         // assuming backend does full validation.
-        const isEligibleProd = d.product_ids?.includes(line.productId);
+        const isEligibleProd = (d as Discount).product_ids?.includes(line.productId);
         // Note: For perfect frontend calculation, line should include categoryId.
         // We do a best-effort calculation here.
         if (isEligibleProd) return sum + (line.unitPrice * line.quantity);
@@ -131,7 +132,7 @@ function CartPage() {
       // If we couldn't match any products (maybe it's a category discount and we don't have cat ids in cart),
       // we fallback to the backend's validation by just showing 0 discount locally if we aren't sure,
       // or we can optimistically apply it. Let's conservatively apply only to matched products.
-      if (d.category_ids && d.category_ids.length > 0 && (!d.product_ids || d.product_ids.length === 0)) {
+      if (((d as Discount).category_ids) && ((d as Discount).category_ids).length > 0 && (!((d as Discount).product_ids) || ((d as Discount).product_ids).length === 0)) {
          eligibleSubtotal = subtotal; // Optimistic fallback for category-only discounts
       }
     }

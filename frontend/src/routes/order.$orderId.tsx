@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChefHat, Loader2, Printer, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

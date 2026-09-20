@@ -83,10 +83,13 @@ export const cartSlice = createSlice({
     decrement: (state, action: PayloadAction<string>) => {
       const index = state.lines.findIndex((l) => l.key === action.payload);
       if (index !== -1) {
-        if (state.lines[index].quantity <= 1) {
-          state.lines.splice(index, 1);
-        } else {
-          state.lines[index].quantity -= 1;
+        const line = state.lines[index];
+        if (line) {
+          if (line.quantity <= 1) {
+            state.lines.splice(index, 1);
+          } else {
+            line.quantity -= 1;
+          }
         }
         syncStorage(state);
       }

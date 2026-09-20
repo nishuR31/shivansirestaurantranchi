@@ -72,7 +72,7 @@ export const requestAction = async (req: FastifyRequest, res: FastifyReply) => {
     // Root protections
     if (parsed.data.action_type === "DELETE_SUPERADMIN" && parsed.data.target_id) {
        const target = await prismaAdmin.admin.findUnique({ where: { id: parsed.data.target_id } });
-       if (target?.email === env.ROOT_EMAIL) {
+       if (target?.email === env.ADMIN_EMAIL) {
          return sendError(res, "Cannot propose deletion of the ROOT superadmin", STATUS_CODES.FORBIDDEN);
        }
        if (activeSuperadmins <= 1 && target?.isActive) {

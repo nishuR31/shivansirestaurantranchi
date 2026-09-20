@@ -19,16 +19,4 @@ export default async function reviewRoutes(app: FastifyInstance) {
     { preHandler: [authenticate as any, requireAdmin as any] },
     reviewController.deleteReview
   );
-  
-  app.post(
-    "/upload-image",
-    { preHandler: [authenticate as any, requireAdmin as any] },
-    reviewController.uploadProductImage
-  );
-  
-  app.delete(
-    "/upload-image",
-    { preHandler: [authenticate as any, requireAdmin as any] },
-    reviewController.deleteProductImage
-  );
 }

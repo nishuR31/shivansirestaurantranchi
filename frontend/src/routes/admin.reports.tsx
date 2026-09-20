@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ordersQuery, settingsQuery } from "@/lib/db";
 import { isToday, isThisMonth, isThisYear, isSameDay, money } from "@/lib/format";
-import type { Order } from "@/lib/db";
+import type { Order } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/reports")({
   component: Reports,
@@ -19,7 +19,7 @@ function Reports() {
   const currency = settings?.currency ?? "₹";
   const [customDate, setCustomDate] = useState("");
 
-  const valid = orders.filter((o) => o.status !== "rejected");
+  const valid = orders.filter((o) => o.status !== "CANCELLED");
   const todays = valid.filter((o) => isToday(o.created_at));
 
   const revenueOf = (list: Order[]) => list.reduce((sum, o) => sum + Number(o.total), 0);
@@ -35,8 +35,7 @@ function Reports() {
     // Custom date orders
     let customOrders: Order[] = [];
     if (customDate) {
-      const target = new Date(customDate);
-      customOrders = valid.filter((o) => isSameDay(new Date(o.created_at), target));
+      customOrders = valid.filter((o) => isSameDay(o.created_at, customDate));
     }
     const customRevenue = revenueOf(customOrders);
 
@@ -69,8 +68,8 @@ function Reports() {
         if (!itemSales[item.name]) {
           itemSales[item.name] = { name: item.name, qty: 0, revenue: 0 };
         }
-        itemSales[item.name].qty += item.quantity;
-        itemSales[item.name].revenue += Number(item.line_total);
+        itemSales[item.name]!.qty += item.quantity;
+        itemSales[item.name]!.revenue += Number(item.line_total);
       }
     }
     const topItems = Object.values(itemSales)

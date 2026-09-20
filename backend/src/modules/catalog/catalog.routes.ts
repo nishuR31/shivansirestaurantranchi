@@ -26,4 +26,16 @@ export default async function catalogRoutes(app: FastifyInstance) {
     { preHandler: [authenticate as any, requireAdmin as any] },
     catalogController.getNotifications
   );
+
+  app.post(
+    "/upload-image",
+    { preHandler: [authenticate as any, requireAdmin as any] },
+    catalogController.uploadProductImage
+  );
+
+  app.delete(
+    "/upload-image",
+    { preHandler: [authenticate as any, requireAdmin as any] },
+    catalogController.deleteProductImage
+  );
 }
