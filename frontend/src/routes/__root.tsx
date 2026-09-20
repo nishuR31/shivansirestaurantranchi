@@ -348,115 +348,75 @@ function SuspensionGuard({ children }: { children: ReactNode }) {
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 text-center">
-        {/* Background effects */}
-        <div
-          className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-          aria-hidden="true"
-        >
-          <div className="absolute -top-32 left-1/2 size-[50rem] -translate-x-1/2 rounded-full bg-destructive/8 blur-[140px] animate-pulse" />
-          <div className="absolute bottom-0 right-0 size-[30rem] rounded-full bg-primary/5 blur-[100px]" />
-        </div>
-
         <div className="animate-rise max-w-lg w-full space-y-8">
-          {/* Shield Icon */}
-          <div className="mx-auto relative">
-            <div className="absolute inset-0 mx-auto size-24 rounded-full bg-destructive/20 blur-xl animate-pulse" />
-            <div className="relative mx-auto flex size-24 items-center justify-center rounded-full border-2 border-destructive/30 bg-gradient-to-b from-destructive/10 to-destructive/5 shadow-lg shadow-destructive/10">
-              <svg
-                className="size-12 text-destructive"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="M12 8v4" />
-                <circle cx="12" cy="16" r="1" fill="currentColor" />
-              </svg>
-            </div>
+          
+          <div className="mx-auto flex size-16 items-center justify-center rounded-md border border-destructive/20 bg-destructive/5 text-destructive">
+            <AlertTriangle className="size-8" strokeWidth={1.5} />
           </div>
 
-          {/* Restaurant branding */}
           <div className="space-y-2">
-            <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
+            <h1 className="font-display text-3xl font-semibold text-foreground tracking-tight">
               {restaurantName}
             </h1>
             {restaurantTagline && (
-              <p className="text-sm text-muted-foreground italic">{restaurantTagline}</p>
+              <p className="text-sm text-muted-foreground">{restaurantTagline}</p>
             )}
           </div>
 
-          {/* Status badge */}
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-destructive/10 border border-destructive/30 px-4 py-2 text-sm font-semibold text-destructive">
-              <span className="relative flex size-2">
+            <span className="inline-flex items-center gap-2 border-b border-destructive/30 pb-1 text-xs font-semibold tracking-widest text-destructive uppercase">
+              <span className="relative flex size-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-destructive" />
               </span>
-              TEMPORARILY UNAVAILABLE · {statusCode}
+              Service Unavailable · Code {statusCode}
             </span>
           </div>
 
-          {/* Custom message card */}
-          <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 shadow-sm text-left">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="size-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <h2 className="font-display text-base font-semibold text-foreground mb-2">
-                  Service Notice
-                </h2>
-                <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                  {message}
-                </p>
-              </div>
-            </div>
+          <div className="border-l-2 border-destructive/50 bg-destructive/5 p-4 text-left">
+            <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+              {message}
+            </p>
           </div>
 
-          {/* Info cards */}
           {(phone || address || (openingTime && closingTime)) && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border divide-y sm:divide-y-0 sm:divide-x divide-border bg-card">
               {phone && (
                 <a
                   href={`tel:${phone}`}
-                  className="group rounded-xl border border-border bg-card/60 backdrop-blur-sm p-4 transition-all hover:bg-card hover:shadow-md hover:border-primary/30"
+                  className="group flex flex-col items-center p-4 transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  <div className="text-2xl mb-2">📞</div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Contact Us</div>
-                  <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{phone}</div>
+                  <div className="mb-2 text-muted-foreground group-hover:text-foreground">
+                    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1 group-hover:text-foreground">Contact</div>
+                  <div className="text-sm font-medium">{phone}</div>
                 </a>
               )}
               {address && (
-                <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm p-4">
-                  <div className="text-2xl mb-2">📍</div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Visit Us</div>
-                  <div className="text-sm font-medium text-foreground leading-snug">{address}</div>
+                <div className="flex flex-col items-center p-4">
+                  <div className="mb-2 text-muted-foreground">
+                    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Visit</div>
+                  <div className="text-sm font-medium leading-snug">{address}</div>
                 </div>
               )}
               {openingTime && closingTime && (
-                <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm p-4">
-                  <div className="text-2xl mb-2">⏰</div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Regular Hours</div>
-                  <div className="text-sm font-medium text-foreground">{openingTime} – {closingTime}</div>
+                <div className="flex flex-col items-center p-4">
+                  <div className="mb-2 text-muted-foreground">
+                    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Hours</div>
+                  <div className="text-sm font-medium">{openingTime} – {closingTime}</div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Footer message */}
-          <div className="pt-4 border-t border-border/50">
+          <div className="pt-8">
             <p className="text-xs text-muted-foreground">
-              This is a temporary measure. We apologize for the inconvenience and will be back shortly.
-              <br />
-              <span className="inline-flex items-center gap-1 mt-1">
-                Please check back later
-                <span className="inline-flex gap-0.5">
-                  <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
-                  <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
-                  <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
-                </span>
-              </span>
+              Please check back later. We apologize for the inconvenience.
             </p>
           </div>
         </div>
