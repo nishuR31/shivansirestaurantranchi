@@ -169,7 +169,7 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
     const today = new Date().toISOString().slice(0, 10);
     const hour = new Date().getHours();
 
-    const orderNumber = `SHV-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNumber = `MT-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
     const billId = `BILL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const { newOrder: order, total } = await prismaApp.$transaction(async (tx) => {
@@ -237,8 +237,8 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
       // 5. Loyalty discounts (only on the milestone order, e.g. exactly 25th, 50th visit)
       const visits = existingCustomer?.visits ?? 0;
       const loyaltyTier = loyaltyRules
-        .filter((r) => visits + 1 === r.visits_required)
-        .sort((a, b) => b.visits_required - a.visits_required)[0];
+        .filter((r:any) => Number(visits) + 1 === r.visits_required)
+        .sort((a:any, b:any) => b.visits_required - a.visits_required)[0];
 
       if (loyaltyTier) {
         const loyaltyValue = (subtotal * Number(loyaltyTier.discount_percent)) / 100;
@@ -388,7 +388,7 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
       : "Takeaway / parcel";
     void sendWhatsAppMessage(
       data.customerPhone,
-      `🍽 *Shivansi Restaurant & Sweet Shop*\n\nHi ${data.customerName}, your order *${order.order_number}* is confirmed.\n${serveAt}\nItems: ${items
+      `🍽 *Maa Tara Sweets*\n\nHi ${data.customerName}, your order *${order.order_number}* is confirmed.\n${serveAt}\nItems: ${items
         .map((i: any) => `${i.quantity}× ${i.name}`)
         .join(
           ", ",
@@ -418,7 +418,7 @@ export const placeOrder = async (req: FastifyRequest, res: FastifyReply) => {
 export const updateOrderStatus = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { id } = req.params as any;
-    const { status } = req.body as any;
+    const { status } = (req.body || {}) as any;
 
     const VALID_STATUSES = [
       "PENDING",
@@ -617,7 +617,7 @@ export const requestOrderHistoryCode = async (req: FastifyRequest, res: FastifyR
 
     void sendWhatsAppMessage(
       normalizedPhone,
-      `🔐 *Shivansi Restaurant & Sweet Shop*\n\nYour order history verification code is *${code}*. It expires in 10 minutes.\n\nAutomated message — never share this code with anyone.`,
+      `🔐 *Maa Tara Sweets*\n\nYour order history verification code is *${code}*. It expires in 10 minutes.\n\nAutomated message — never share this code with anyone.`,
     );
 
     return res.send({ ok: true, delivered: true });

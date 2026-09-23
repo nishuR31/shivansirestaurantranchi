@@ -3,6 +3,7 @@ import env from "./envConfig";
 import logger from "./loggerConfig";
 
 const redisOptions = {
+  keyPrefix: "mt:",
   lazyConnect: true,
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
