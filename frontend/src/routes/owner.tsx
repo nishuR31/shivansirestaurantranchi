@@ -62,7 +62,6 @@ function OwnerPage() {
           {/* Gradient banner */}
           <div
             className="h-36 w-full relative"
-            style={{ background: "var(--gradient-aurora)" }}
             aria-hidden="true"
           >
             <div

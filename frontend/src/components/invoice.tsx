@@ -15,30 +15,30 @@ export function Invoice({
   return (
     <div
       id="invoice"
-      className="glass rounded-3xl p-6 print:m-0 print:w-[80mm] print:rounded-none print:border-none print:bg-transparent print:p-2 print:text-black print:shadow-none"
+      className="glass rounded-3xl p-6 print:m-0 print:rounded-none print:border-none print:bg-transparent print:p-4 print:text-black print:shadow-none"
     >
-      <header className="mb-4 flex flex-col items-center border-b border-dashed border-border pb-4 text-center print:border-black">
-        <h2 className="font-display text-xl font-bold uppercase tracking-wider print:text-xl">
+      <header className="mb-6 flex flex-col items-center border-b border-dashed border-border pb-6 text-center print:border-black">
+        <h2 className="font-display text-3xl font-bold uppercase tracking-wider print:text-4xl">
           {settings?.name ?? import.meta.env["VITE_BUSINESS_NAME"] ?? "Maa Tara Sweets"}
         </h2>
         {settings?.address && (
-          <p className="mt-1 text-xs text-muted-foreground print:text-[10px] print:text-black">
+          <p className="mt-2 text-sm text-muted-foreground print:text-base print:text-black">
             {settings.address}
           </p>
         )}
         {settings?.phone && (
-          <p className="text-xs text-muted-foreground print:text-[10px] print:text-black">
+          <p className="text-sm text-muted-foreground print:text-base print:text-black">
             Ph: {settings.phone}
           </p>
         )}
         {settings?.gst_number && (
-          <p className="mt-1 text-xs font-semibold text-muted-foreground print:text-[10px] print:text-black">
+          <p className="mt-2 text-sm font-semibold text-muted-foreground print:text-base print:text-black">
             GSTIN: {settings.gst_number}
           </p>
         )}
       </header>
 
-      <div className="mb-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground print:text-[10px] print:text-black">
+      <div className="mb-6 grid grid-cols-2 gap-4 text-sm text-muted-foreground print:text-base print:text-black">
         <div>
           <p>
             <span className="font-semibold text-foreground print:text-black">No:</span>{" "}
@@ -73,7 +73,7 @@ export function Invoice({
             {order.payment_status}
           </p>
         </div>
-        <div className="col-span-2 mt-2">
+        <div className="col-span-2 mt-4">
           <p>
             <span className="font-semibold text-foreground print:text-black">
               Customer:
@@ -83,12 +83,12 @@ export function Invoice({
         </div>
       </div>
 
-      <table className="w-full text-sm print:text-[11px] print:text-black">
-        <thead className="border-b border-dashed border-border text-left text-xs uppercase tracking-wide text-muted-foreground print:border-black print:text-[10px] print:text-black">
+      <table className="w-full text-base print:text-lg print:text-black">
+        <thead className="border-b border-dashed border-border text-left text-sm uppercase tracking-wide text-muted-foreground print:border-black print:text-base print:text-black">
           <tr>
-            <th className="py-2">Item</th>
-            <th className="py-2 text-center">Qty</th>
-            <th className="py-2 text-right">Amt</th>
+            <th className="py-3">Item</th>
+            <th className="py-3 text-center">Qty</th>
+            <th className="py-3 text-right">Amt</th>
           </tr>
         </thead>
         <tbody>
@@ -97,26 +97,26 @@ export function Invoice({
               key={item.id}
               className="border-b border-border/40 last:border-0 print:border-black/20"
             >
-              <td className="py-2">
+              <td className="py-3">
                 <span className="font-medium text-foreground print:text-black">
                   {item.name}
                 </span>
                 {item.weight_label ? (
-                  <span className="text-xs text-muted-foreground print:text-[9px] print:text-black">
+                  <span className="text-sm text-muted-foreground print:text-base print:text-black">
                     {" "}
                     ({item.weight_label})
                   </span>
                 ) : null}
                 {item.instructions ? (
-                  <span className="block text-[10px] italic text-accent print:text-[9px] print:text-black">
+                  <span className="block text-xs italic text-accent print:text-sm print:text-black">
                     {item.instructions}
                   </span>
                 ) : null}
               </td>
-              <td className="py-2 text-center text-foreground print:text-black">
+              <td className="py-3 text-center text-foreground print:text-black">
                 {item.quantity}
               </td>
-              <td className="py-2 text-right text-foreground print:text-black">
+              <td className="py-3 text-right text-foreground print:text-black">
                 {money(item.line_total, currency)}
               </td>
             </tr>
@@ -124,7 +124,7 @@ export function Invoice({
         </tbody>
       </table>
 
-      <dl className="mt-4 space-y-1 border-y border-dashed border-border py-3 text-sm print:border-black print:text-[11px]">
+      <dl className="mt-6 space-y-2 border-y border-dashed border-border py-4 text-base print:border-black print:text-lg">
         <Line label="Subtotal" value={money(order.subtotal, currency)} />
         {order.discount > 0 ? (
           <Line
@@ -145,26 +145,26 @@ export function Invoice({
           <Line label="Delivery" value={money(order.delivery_charge, currency)} />
         ) : null}
         
-        <div className="mt-2 flex justify-between pt-2 font-display text-lg font-bold text-foreground print:text-black">
+        <div className="mt-4 flex justify-between pt-4 font-display text-2xl font-bold text-foreground print:text-black">
           <span>Total</span>
           <span>{money(order.total, currency)}</span>
         </div>
       </dl>
 
       {order.notes ? (
-        <p className="mt-3 text-xs italic text-muted-foreground print:text-[10px] print:text-black">
+        <p className="mt-4 text-sm italic text-muted-foreground print:text-base print:text-black">
           Note: {order.notes}
         </p>
       ) : null}
 
-      <footer className="mt-6 text-center text-xs text-muted-foreground print:text-[10px] print:text-black">
+      <footer className="mt-8 text-center text-sm text-muted-foreground print:text-base print:text-black">
         <p className="font-semibold text-foreground print:text-black">
           {takeaway
             ? "Thank you for your order!"
             : "Thank you for dining with us!"}
         </p>
-        <p className="mt-1">Please visit again.</p>
-        <div className="mt-4 border-t border-dashed border-border pt-2 text-[9px] print:border-black print:text-[8px]">
+        <p className="mt-2">Please visit again.</p>
+        <div className="mt-6 border-t border-dashed border-border pt-4 text-xs print:border-black print:text-sm">
           <p>This is a computer generated invoice.</p>
           <p>All disputes are subject to local jurisdiction only.</p>
         </div>

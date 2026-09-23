@@ -70,8 +70,7 @@ export function SiteFooter() {
     <footer className="mt-20 border-t border-border/40 bg-background/50 relative overflow-hidden">
       {/* Top gradient glow — decorative, doesn't affect render */}
       <div
-        className="absolute top-0 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 h-64 w-[800px] rounded-full blur-3xl pointer-events-none"
-        style={{ background: "var(--gradient-aurora)", opacity: 0.15 }}
+        className="absolute inset-0 -z-10 bg-primary/5"
         aria-hidden="true"
       />
 

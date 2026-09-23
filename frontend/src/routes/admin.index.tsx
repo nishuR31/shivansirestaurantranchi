@@ -79,6 +79,7 @@ function LiveOrders() {
     try {
       await fetchAPI(`/orders/${order.id}/payment`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "paid" })
       });
       void qc.invalidateQueries({ queryKey: ["orders"] });

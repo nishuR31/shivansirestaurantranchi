@@ -150,7 +150,7 @@ export function SiteHeader() {
             {/* Animated hamburger — mobile only */}
             <button
               id="mobile-menu-toggle"
-              className="grid size-10 place-items-center rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 sm:hidden"
+              className="grid size-10 place-items-center rounded-xl border border-border/60 bg-card transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 sm:hidden"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
@@ -200,7 +200,7 @@ export function SiteHeader() {
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "opacity-0"}`}
+          className={`absolute inset-0 bg-background/95 transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "opacity-0"}`}
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />

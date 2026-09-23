@@ -293,7 +293,7 @@ function ScannerPage() {
                 e.stopPropagation();
                 setFacingMode((m) => (m === "environment" ? "user" : "environment"));
               }}
-              className="absolute top-3 right-3 grid size-9 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors pointer-events-auto"
+              className="absolute top-3 right-3 grid size-9 place-items-center rounded-full bg-black/80 text-white hover:bg-black transition-colors pointer-events-auto"
               aria-label="Flip camera"
             >
               <RotateCcw className="size-4" />

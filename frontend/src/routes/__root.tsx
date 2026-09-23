@@ -450,7 +450,7 @@ function RootComponent() {
           <SEO />
           <ScrollToTop />
           <div className="relative min-h-screen">
-            <div className="pointer-events-none fixed inset-0 -z-10 aurora-bg opacity-70" />
+            {/* Removed fancy aurora background for minimalist styling */}
             <SiteHeader />
             {/* Suspense boundary: shows PageLoader while lazy route chunks load */}
             <Suspense fallback={<PageLoader />}>

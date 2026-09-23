@@ -20,14 +20,14 @@
   --font-display: "Playfair Display SC", "Georgia", ui-serif, serif;
   --font-sans: "Karla", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 
-  /* ── Radius scale ── */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* ── Radius scale (Minimalist - reduced rounding) ── */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 8px);
+  --radius-4xl: calc(var(--radius) + 12px);
 
   /* ── Color token bridge (Tailwind → CSS vars) ── */
   --color-background: var(--background);
@@ -93,24 +93,25 @@
    DARK THEME (default) — deep near-black + violet aurora + warm saffron
    ════════════════════════════════════════════════════ */
 :root {
-  --radius: 1rem;
+  /* Minimalist radius */
+  --radius: 0.5rem;
 
   /* Surfaces */
-  --background: oklch(0.12 0.012 285);
+  --background: oklch(0.14 0.005 285);
   --foreground: oklch(0.97 0.004 285);
-  --card: oklch(0.16 0.014 285);
+  --card: oklch(0.18 0.008 285);
   --card-foreground: oklch(0.97 0.004 285);
-  --popover: oklch(0.15 0.014 285);
+  --popover: oklch(0.18 0.008 285);
   --popover-foreground: oklch(0.97 0.004 285);
 
-  /* Brand — violet aurora primary */
+  /* Brand */
   --primary: oklch(0.65 0.22 292);
   --primary-foreground: oklch(0.99 0.002 285);
 
   /* Neutrals */
-  --secondary: oklch(0.22 0.016 285);
+  --secondary: oklch(0.24 0.01 285);
   --secondary-foreground: oklch(0.95 0.004 285);
-  --muted: oklch(0.22 0.013 285);
+  --muted: oklch(0.24 0.01 285);
   --muted-foreground: oklch(0.66 0.014 285);
 
   /* Accent — warm saffron/amber (Indian restaurant identity) */
@@ -182,15 +183,20 @@
     oklch(1 0 0 / 0%) 60%
   );
 
-  /* Shadows */
-  --shadow-glow: 0 0 40px -10px color-mix(in oklab, var(--primary) 65%, transparent);
-  --shadow-glow-gold: 0 0 32px -8px color-mix(in oklab, var(--accent) 55%, transparent);
-  --shadow-card: 0 20px 50px -30px oklch(0 0 0 / 88%);
-  --shadow-card-hover: 0 32px 64px -24px
-    color-mix(in oklab, var(--primary) 50%, transparent);
-  --shadow-header: 0 1px 40px 0 oklch(0 0 0 / 40%);
+  /* Shadows (Claymorphism depth + Minimalist) */
+  --shadow-glow: none;
+  --shadow-glow-gold: none;
+  --shadow-card: 
+    4px 4px 12px oklch(0 0 0 / 35%),
+    -4px -4px 12px oklch(1 0 0 / 3%),
+    inset 0 1px 1px oklch(1 0 0 / 5%);
+  --shadow-card-hover: 
+    6px 6px 16px oklch(0 0 0 / 45%),
+    -6px -6px 16px oklch(1 0 0 / 5%),
+    inset 0 1px 1px oklch(1 0 0 / 8%);
+  --shadow-header: 0 4px 12px oklch(0 0 0 / 25%);
 
-  /* Default UI base variables (Standard) */
+  /* Default UI base variables (Minimalist + Solid) */
   --ui-glass-bg: var(--card);
   --ui-glass-backdrop: none;
   --ui-glass-border: 1px solid var(--border);
@@ -221,7 +227,14 @@
   --sidebar-accent: oklch(0.93 0.006 285);
   --sidebar-accent-foreground: oklch(0.16 0.012 285);
   --sidebar-border: oklch(0.16 0.012 285 / 11%);
-  --shadow-card: 0 20px 50px -34px oklch(0.2 0.02 285 / 38%);
+  --shadow-card: 
+    6px 6px 16px oklch(0.2 0.02 285 / 12%),
+    -6px -6px 16px oklch(1 0 0),
+    inset 0 1px 1px oklch(1 0 0);
+  --shadow-card-hover: 
+    8px 8px 24px oklch(0.2 0.02 285 / 16%),
+    -8px -8px 24px oklch(1 0 0),
+    inset 0 1px 1px oklch(1 0 0);
 }
 
 /* ════════════════════════════════════════════════════
@@ -640,16 +653,29 @@
     print-color-adjust: exact;
   }
 
+  /* Hide all elements by default so ONLY the invoice prints, IF an invoice is on the page */
+  body:has(#invoice) * {
+    visibility: hidden;
+  }
+
   /* The invoice should take up the full page */
-  #invoice {
-    width: 100%;
+  body:has(#invoice) #invoice, 
+  body:has(#invoice) #invoice * {
+    visibility: visible;
+  }
+  
+  body:has(#invoice) #invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Standard thermal receipt width */
     max-width: 100%;
     background: white !important;
     backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 8mm !important;
-    margin: 0;
+    padding: 4mm !important; /* Smaller padding for receipt */
+    margin: 0 auto;
     border-radius: 0 !important;
     color: black !important;
   }
@@ -667,10 +693,9 @@
     -webkit-text-fill-color: #444 !important;
   }
 
-  /* Page: A4 portrait, minimal margins */
+  /* Page: Receipt sizing */
   @page {
-    size: A4 portrait;
-    margin: 10mm 12mm;
+    margin: 0;
   }
 
   /* Prevent ugly page breaks inside an order item row */

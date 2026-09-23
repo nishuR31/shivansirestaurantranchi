@@ -128,7 +128,7 @@ export function ProductCard({
 
         {/* Sold-out overlay */}
         {!product.is_available ? (
-          <div className="absolute inset-0 grid place-items-center bg-background/80 backdrop-blur-sm">
+          <div className="absolute inset-0 grid place-items-center bg-background/95">
             <Badge variant="destructive" className="text-sm">
               Sold out today
             </Badge>
